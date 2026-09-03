@@ -117,6 +117,15 @@
   .logout-row { text-align: center; margin-top: 14px; }
   .logout-link { font-size: 12px; color: #8a93a3; text-decoration: none; }
   .logout-link:hover { text-decoration: underline; color: #4a5262; }
+  .diagram-link-row { text-align: right; margin-top: 8px; }
+  .diagram-link { font-size: 12px; color: #8a93a3; text-decoration: none; }
+  .diagram-link:hover { text-decoration: underline; color: #4a5262; }
+  .diagram-panel {
+    margin-top: 14px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 16px;
+    background: #f9fafb;
+  }
+  .diagram-panel-title { font-size: 13.5px; font-weight: 700; color: #1e2532; margin-bottom: 12px; }
+  .diagram-panel-caption { font-size: 12px; color: #6b7383; line-height: 1.5; margin-top: 12px; }
   .email-panel {
     margin-top: 14px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 16px;
     background: #f9fafb;
@@ -191,6 +200,7 @@ let managers = {};
 let editing = null; // { name, field }
 let emailPanelOpen = false;
 let copyFeedback = null; // 'subject' | 'body' | null
+let diagramOpen = false;
 let suppressRefresh = false; // true while a native file picker may be open
 let errorMsg = null;
 
@@ -485,6 +495,51 @@ function render() {
     `;
   }
 
+  function renderDiagramPanel() {
+    return `
+      <div class="diagram-panel">
+        <div class="diagram-panel-title">How this tool is hosted and served</div>
+        <svg width="100%" viewBox="0 0 680 286" role="img" aria-label="Hosting architecture diagram">
+          <defs>
+            <marker id="diagram-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#8a93a3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+          </defs>
+          <g>
+            <rect x="40" y="40" width="170" height="56" rx="8" fill="#f6f7f9" stroke="#d8dbe2" stroke-width="1"/>
+            <text x="125" y="58" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">GitHub repo</text>
+            <text x="125" y="76" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Stores project code</text>
+          </g>
+          <g>
+            <rect x="270" y="40" width="210" height="56" rx="8" fill="#f6f7f9" stroke="#d8dbe2" stroke-width="1"/>
+            <text x="375" y="58" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">Cloudflare Pages build</text>
+            <text x="375" y="76" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Builds on every push</text>
+          </g>
+          <g>
+            <rect x="40" y="190" width="170" height="56" rx="8" fill="#f6f7f9" stroke="#d8dbe2" stroke-width="1"/>
+            <text x="125" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">Browser</text>
+            <text x="125" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Loads the tracker</text>
+          </g>
+          <g>
+            <rect x="270" y="190" width="210" height="56" rx="8" fill="#e9f5ee" stroke="#c8e6d5" stroke-width="1"/>
+            <text x="375" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#3a6b52">Cloudflare Worker</text>
+            <text x="375" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#3a6b52">Serves site and API</text>
+          </g>
+          <g>
+            <rect x="505" y="190" width="125" height="56" rx="8" fill="#f2ecfb" stroke="#ddccf2" stroke-width="1"/>
+            <text x="567" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#6b4fa0">D1 database</text>
+            <text x="567" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b4fa0">SQL data</text>
+          </g>
+          <line x1="210" y1="68" x2="268" y2="68" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+          <line x1="375" y1="96" x2="375" y2="188" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+          <line x1="210" y1="218" x2="268" y2="218" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+          <line x1="480" y1="218" x2="503" y2="218" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+        </svg>
+        <div class="diagram-panel-caption">A push to GitHub triggers a Cloudflare Pages build, which deploys to a Cloudflare Worker. The Worker serves this site and its API to your browser, and reads/writes manager data in a D1 database.</div>
+      </div>
+    `;
+  }
+
   const rows = names.map((name) => {
     const m = managers[name];
     const safeName = escapeHtml(name);
@@ -558,6 +613,8 @@ function render() {
         <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
       <div class="logout-row"><a href="/logout" class="logout-link">Log out</a></div>
+      <div class="diagram-link-row"><a href="#" data-action="toggleDiagram" class="diagram-link">Network diagram</a></div>
+      ${diagramOpen ? renderDiagramPanel() : ""}
       ${emailPanelOpen ? renderEmailPanel() : ""}
       <div id="errorNote" class="error-note">${errorMsg || ""}</div>
     </div>
@@ -570,6 +627,7 @@ function render() {
 document.getElementById("app").addEventListener("click", (e) => {
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
+  if (btn.tagName === "A") e.preventDefault();
   const action = btn.dataset.action;
   const name = btn.dataset.name;
   if (action === "toggleSent") toggleSent(name);
@@ -585,6 +643,7 @@ document.getElementById("app").addEventListener("click", (e) => {
     document.getElementById("importFile").click();
   }
   else if (action === "emailSummary") emailSummary();
+  else if (action === "toggleDiagram") { diagramOpen = !diagramOpen; render(); }
   else if (action === "copySubject") copyText(document.getElementById("emailSubjectField").value, "subject");
   else if (action === "copyBody") copyText(document.getElementById("emailBodyField").value, "body");
 });
