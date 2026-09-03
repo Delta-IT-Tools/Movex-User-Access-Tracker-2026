@@ -11,3 +11,13 @@ run_worker_first = true
 binding = "DB"
 database_name = "manager-approval-tracker-db"
 database_id = "790fa000-ecf3-4dea-949a-825b677e5027"
+
+[[secrets_store_secrets]]
+binding = "SITE_PASSWORD"
+store_id = "73a9bf3c60b640c0889b9e4f2ffc69c1"
+secret_name = "SITE_PASSWORD"
+
+[[secrets_store_secrets]]
+binding = "SESSION_SECRET"
+store_id = "73a9bf3c60b640c0889b9e4f2ffc69c1"
+secret_name = "SESSION_SECRET"
