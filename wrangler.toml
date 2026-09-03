@@ -20,4 +20,4 @@ secret_name = "SITE_PASSWORD"
 [[secrets_store_secrets]]
 binding = "SESSION_SECRET"
 store_id = "73a9bf3c60b640c0889b9e4f2ffc69c1"
-secret_name = "SESSION_SECRET"
+secret_name = "AUDIT_SESSION_SECRET"
