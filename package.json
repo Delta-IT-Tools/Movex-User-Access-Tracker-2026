@@ -1,10 +1,10 @@
 {
-  "name": "manager-approval-tracker",
+  "name": "movex-users",
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "wrangler pages dev public",
-    "deploy": "wrangler pages deploy public --project-name=manager-approval-tracker"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

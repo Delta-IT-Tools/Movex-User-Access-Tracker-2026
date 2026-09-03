@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Approval Tracker</title>
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
@@ -135,7 +137,9 @@
   .email-hint { font-size: 11.5px; color: #8a93a3; line-height: 1.5; }
   .error-note { font-size: 12px; color: #b3432f; margin-top: 10px; }
 </style>
-<div id="app"><div class="loading">Loading tracker…</div></div>
+</head>
+<body>
+<div id="app"><div class="loading">Loading tracker&#8230;</div></div>
 <script>
 function today() {
   const d = new Date();
@@ -190,7 +194,7 @@ let copyFeedback = null; // 'subject' | 'body' | null
 let errorMsg = null;
 
 // --- Data layer: everyone reads/writes the same shared D1 database via
-// these API routes (see /functions/api/managers/*.js). ---
+// these API routes (see /src/index.js in the Worker). ---
 
 async function load() {
   try {
@@ -447,8 +451,8 @@ function render() {
     if (isOn) {
       return `
         <div class="pill-group">
-          <button class="pill ${statusClass}" data-action="${toggleAction}" data-name="${name}">✓ ${formatDisplay(dateVal)}</button>
-          <button class="edit-btn" title="Change date" data-action="editDate" data-name="${name}" data-field="${field}">✎</button>
+          <button class="pill ${statusClass}" data-action="${toggleAction}" data-name="${name}">&#10003; ${formatDisplay(dateVal)}</button>
+          <button class="edit-btn" title="Change date" data-action="editDate" data-name="${name}" data-field="${field}">&#9998;</button>
         </div>`;
     }
     return `<button class="pill empty" ${disabled ? "disabled" : ""} data-action="${toggleAction}" data-name="${name}">${offLabel}</button>`;
@@ -485,7 +489,7 @@ function render() {
         <div class="name-cell">
           <span>${safeName}</span>
           <button class="review-btn ${m.reviewRequired ? "active" : ""}" data-action="toggleReview" data-name="${safeName}">
-            ${m.reviewRequired ? "⚑ Review required" : "Flag for review"}
+            ${m.reviewRequired ? "&#9873; Review required" : "Flag for review"}
           </button>
         </div>
         ${dateCell(safeName, "sentDate", "sent", m.sent, m.sentDate, false, "toggleSent", "Mark sent")}
@@ -526,7 +530,7 @@ function render() {
     <div class="page-body">
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       ${pending.length > 0 ? `<div class="pending-note">Waiting on: ${pending.map(escapeHtml).join(", ")}</div>` : ""}
-      ${needsReview.length > 0 ? `<div class="review-note">⚑ Review required: ${needsReview.map(escapeHtml).join(", ")}</div>` : ""}
+      ${needsReview.length > 0 ? `<div class="review-note">&#9873; Review required: ${needsReview.map(escapeHtml).join(", ")}</div>` : ""}
       <div class="table-wrap">
         <div class="table-header">
           <div class="th" style="flex:1; text-align:left; border-left:none; padding-left:0;">Manager</div>
@@ -540,13 +544,13 @@ function render() {
         ${rows}
       </div>
       <div class="add-row">
-        <input id="newNameInput" class="add-input" placeholder="Add a manager…" />
+        <input id="newNameInput" class="add-input" placeholder="Add a manager&#8230;" />
         <button class="add-btn" data-action="addManager">Add</button>
       </div>
       <div class="io-row">
-        <button class="io-btn" data-action="emailSummary">✉ Email</button>
-        <button class="io-btn" data-action="exportData">⬇ Export JSON</button>
-        <button class="io-btn" data-action="importData">⬆ Import JSON</button>
+        <button class="io-btn" data-action="emailSummary">&#9993; Email</button>
+        <button class="io-btn" data-action="exportData">&#11015; Export JSON</button>
+        <button class="io-btn" data-action="importData">&#11014; Import JSON</button>
         <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
       <div class="logout-row"><a href="/logout" class="logout-link">Log out</a></div>
