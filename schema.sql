@@ -1,6 +1,8 @@
+-- Run once when setting up the database:
+--   npx wrangler d1 execute manager-approval-tracker-db --remote --file=./schema.sql
+
 CREATE TABLE IF NOT EXISTS managers (
-  rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL UNIQUE,
+  name TEXT PRIMARY KEY,
   sent INTEGER NOT NULL DEFAULT 0,
   sent_date TEXT,
   received INTEGER NOT NULL DEFAULT 0,

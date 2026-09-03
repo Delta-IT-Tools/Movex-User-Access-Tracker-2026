@@ -1,4 +1,5 @@
--- Run this once, after schema.sql, only if you want to start
+-- Optional: pre-populate the original nine managers, already marked as
+-- "sent" today. Run this once, after schema.sql, only if you want to start
 -- with this exact list instead of an empty tracker:
 --   npx wrangler d1 execute manager-approval-tracker-db --remote --file=./seed.sql
 --
