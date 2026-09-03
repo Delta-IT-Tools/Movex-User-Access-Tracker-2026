@@ -4,7 +4,9 @@
 // routing for everything (password gate, login/logout, the JSON API, and
 // falling through to static assets for the tool's HTML/CSS/JS).
 //
-// Secrets used (set via the Cloudflare dashboard, never committed):
+// Secrets used — either method works, this code handles both:
+//   Classic Worker secret:  set via Settings → Variables and Secrets
+//   Secrets Store binding:  set via the Bindings tab (dashboard)
 //   SITE_PASSWORD   — the shared password for the tool
 //   SESSION_SECRET  — a random string used to sign session cookies
 //
@@ -14,6 +16,22 @@
 
 const COOKIE_NAME = "mat_session";
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// A Secrets Store binding is an object with an async .get() method.
+// A classic `wrangler secret put` / dashboard "Secret" value is a plain
+// string already. This resolves either shape transparently.
+async function resolveSecret(value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value.get === "function") {
+    try {
+      return await value.get();
+    } catch (err) {
+      return undefined;
+    }
+  }
+  return undefined;
+}
 
 export default {
   async fetch(request, env, ctx) {
@@ -28,8 +46,13 @@ export default {
     }
 
     if (!(await isAuthenticated(request, env))) {
-      const justFailed = url.pathname === "/login";
-      return renderLoginPage(justFailed);
+      const showError = url.pathname === "/login" && url.searchParams.get("error") === "1";
+      const debugParam = url.searchParams.get("debug");
+      let debugInfo;
+      if (debugParam) {
+        try { debugInfo = JSON.parse(atob(debugParam)); } catch (e) {}
+      }
+      return renderLoginPage(showError, debugInfo);
     }
 
     // Authenticated from here on.
@@ -205,7 +228,9 @@ async function apiReplaceManagers(request, env) {
 // ---------- Password gate ----------
 
 async function isAuthenticated(request, env) {
-  if (!env.SITE_PASSWORD || !env.SESSION_SECRET) {
+  const sitePassword = await resolveSecret(env.SITE_PASSWORD);
+  const sessionSecret = await resolveSecret(env.SESSION_SECRET);
+  if (!sitePassword || !sessionSecret) {
     // Secrets not configured yet — fail closed (show login) rather than
     // silently letting everyone through.
     return false;
@@ -217,7 +242,7 @@ async function isAuthenticated(request, env) {
   if (parts.length !== 2) return false;
   const [expiryStr, sig] = parts;
 
-  const expected = await hmac(env.SESSION_SECRET, expiryStr);
+  const expected = await hmac(sessionSecret, expiryStr);
   if (!timingSafeEqual(sig, expected)) return false;
 
   const expiry = parseInt(expiryStr, 10);
@@ -227,7 +252,9 @@ async function isAuthenticated(request, env) {
 }
 
 async function handleLoginPost(request, env) {
-  if (!env.SITE_PASSWORD || !env.SESSION_SECRET) {
+  const sitePassword = await resolveSecret(env.SITE_PASSWORD);
+  const sessionSecret = await resolveSecret(env.SESSION_SECRET);
+  if (!sitePassword || !sessionSecret) {
     return new Response(
       "Server is missing SITE_PASSWORD / SESSION_SECRET secrets. Set them via the Cloudflare dashboard.",
       { status: 500 }
@@ -236,7 +263,7 @@ async function handleLoginPost(request, env) {
 
   const formData = await request.formData();
   const password = String(formData.get("password") || "").trim();
-  const expectedPassword = String(env.SITE_PASSWORD || "").trim();
+  const expectedPassword = String(sitePassword || "").trim();
 
   const debugInfo = {
     submittedLength: password.length,
@@ -245,14 +272,18 @@ async function handleLoginPost(request, env) {
     expectedCodes: Array.from(expectedPassword).map((c) => c.charCodeAt(0)),
     sitePasswordBindingPresent: !!env.SITE_PASSWORD,
     sessionSecretBindingPresent: !!env.SESSION_SECRET,
+    sitePasswordResolvedType: typeof env.SITE_PASSWORD,
   };
 
   if (!timingSafeEqual(password, expectedPassword)) {
-    return renderLoginPage(true, debugInfo);
+    const encodedDebug = btoa(JSON.stringify(debugInfo));
+    const headers = new Headers();
+    headers.set("Location", `/login?error=1&debug=${encodeURIComponent(encodedDebug)}`);
+    return new Response(null, { status: 302, headers });
   }
 
   const expiry = Date.now() + SESSION_DURATION_MS;
-  const sig = await hmac(env.SESSION_SECRET, String(expiry));
+  const sig = await hmac(sessionSecret, String(expiry));
   const token = `${expiry}.${sig}`;
 
   const headers = new Headers();
