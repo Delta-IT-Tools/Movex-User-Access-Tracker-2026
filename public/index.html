@@ -191,6 +191,7 @@ let managers = {};
 let editing = null; // { name, field }
 let emailPanelOpen = false;
 let copyFeedback = null; // 'subject' | 'body' | null
+let suppressRefresh = false; // true while a native file picker may be open
 let errorMsg = null;
 
 // --- Data layer: everyone reads/writes the same shared D1 database via
@@ -210,9 +211,11 @@ async function load() {
 }
 
 async function refreshQuietly() {
-  // Used for background polling — skips if the user is mid-edit so we
-  // don't clobber something they're typing.
-  if (editing || emailPanelOpen) return;
+  // Used for background polling — skips if the user is mid-edit, has the
+  // email panel open, or might have a native file picker open (which would
+  // otherwise get its target element swapped out from under it by a
+  // re-render while it's open).
+  if (editing || emailPanelOpen || suppressRefresh) return;
   try {
     const res = await fetch("/api/managers");
     if (res.ok) {
@@ -344,6 +347,7 @@ function exportData() {
 }
 
 async function handleImportFile(file) {
+  suppressRefresh = false; // the picker has closed one way or another
   if (!file) return;
   try {
     const text = await file.text();
@@ -575,7 +579,11 @@ document.getElementById("app").addEventListener("click", (e) => {
   else if (action === "addManager") addManager();
   else if (action === "editDate") startEditDate(name, btn.dataset.field);
   else if (action === "exportData") exportData();
-  else if (action === "importData") document.getElementById("importFile").click();
+  else if (action === "importData") {
+    suppressRefresh = true;
+    setTimeout(() => { suppressRefresh = false; }, 120000); // safety net if the dialog is cancelled
+    document.getElementById("importFile").click();
+  }
   else if (action === "emailSummary") emailSummary();
   else if (action === "copySubject") copyText(document.getElementById("emailSubjectField").value, "subject");
   else if (action === "copyBody") copyText(document.getElementById("emailBodyField").value, "body");
