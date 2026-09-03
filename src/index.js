@@ -4,7 +4,8 @@
 // routing for everything (password gate, login/logout, the JSON API, and
 // falling through to static assets for the tool's HTML/CSS/JS).
 //
-// Secrets used (set with `wrangler secret put <NAME>`, never committed):
+// Secrets used (set via the Cloudflare dashboard: Settings → Variables and
+// Secrets — never committed):
 //   SITE_PASSWORD   — the shared password for the tool
 //   SESSION_SECRET  — a random string used to sign session cookies
 //
@@ -229,15 +230,16 @@ async function isAuthenticated(request, env) {
 async function handleLoginPost(request, env) {
   if (!env.SITE_PASSWORD || !env.SESSION_SECRET) {
     return new Response(
-      "Server is missing SITE_PASSWORD / SESSION_SECRET secrets. Set them with `wrangler secret put`.",
+      "Server is missing SITE_PASSWORD / SESSION_SECRET secrets. Set them in the Cloudflare dashboard under Settings.",
       { status: 500 }
     );
   }
 
   const formData = await request.formData();
-  const password = formData.get("password") || "";
+  const password = String(formData.get("password") || "").trim();
+  const expectedPassword = String(env.SITE_PASSWORD || "").trim();
 
-  if (!timingSafeEqual(password, env.SITE_PASSWORD)) {
+  if (!timingSafeEqual(password, expectedPassword)) {
     return renderLoginPage(true);
   }
 
