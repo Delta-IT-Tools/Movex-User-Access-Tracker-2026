@@ -1,4 +1,4 @@
-name = "movex-user-access-tracker-2026"
+name = "movex-users"
 pages_build_output_dir = "public"
 compatibility_date = "2024-09-23"
 
