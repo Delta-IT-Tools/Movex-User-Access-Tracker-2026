@@ -5,4 +5,4 @@ compatibility_date = "2024-09-23"
 [[d1_databases]]
 binding = "DB"
 database_name = "manager-approval-tracker-db"
-database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+database_id = "790fa000-ecf3-4dea-949a-825b677e5027"
