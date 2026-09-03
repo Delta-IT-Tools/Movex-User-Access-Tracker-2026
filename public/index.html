@@ -1,0 +1,567 @@
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: linear-gradient(180deg, #9AC6E2 0%, #263138 100%);
+    background-attachment: fixed;
+  }
+  #app {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 20px;
+    color: #1e2532;
+  }
+  .loading { display: flex; justify-content: center; padding: 60px; color: #fff; }
+  .page-header {
+    background: #334249;
+    border-radius: 16px 16px 0 0;
+    padding: 24px 24px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .title { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; color: #fff; }
+  .subtitle { font-size: 13.5px; color: #a9b7c0; margin: 4px 0 0; }
+  .stat-row { display: flex; gap: 10px; }
+  .stat-box { background: rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 84px; }
+  .stat-value { font-size: 17px; font-weight: 700; line-height: 1.2; color: #fff; }
+  .stat-value.accent { color: #86dab0; }
+  .stat-label { font-size: 12.5px; font-weight: 700; color: #b9c4cc; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 3px; }
+  .stat-pct { font-size: 15px; color: #d7dee2; margin-top: 3px; font-weight: 700; }
+  .page-body { background: #fff; border-radius: 0 0 16px 16px; padding: 20px 24px 24px; }
+  .progress-track { height: 6px; border-radius: 4px; background: #eceff3; overflow: hidden; margin-bottom: 8px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #4f8f6d, #6cb08a); border-radius: 4px; transition: width 0.3s ease; }
+  .pending-note {
+    font-size: 12.5px; color: #a5732a; background: #fdf5e8; border: 1px solid #f2e2c2;
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 18px;
+  }
+  .table-wrap { border: 1px solid #e7e9ee; border-radius: 12px; overflow: hidden; }
+  .table-header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: #f6f7f9; border-bottom: 1px solid #e7e9ee;
+  }
+  .th { font-size: 11px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.04em; width: 140px; text-align: center; }
+  .th-small { width: 24px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #f0f1f4; background: #fff; }
+  .row:last-child { border-bottom: none; }
+  .row.needs-review { background: #fff6f5; }
+  .col-divider { width: 1px; align-self: stretch; background: #eceff3; flex-shrink: 0; }
+  .name-cell { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e2532; font-size: 14px; }
+  .name-cell span { width: 130px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .review-btn {
+    font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; cursor: pointer;
+    letter-spacing: 0.02em; text-transform: uppercase; border: 1px solid #d8dbe2; background: #fff;
+    color: #a4abb8; font-family: inherit; white-space: nowrap; width: 140px; flex-shrink: 0;
+  }
+  .review-btn.active { background: #fdeceb; border-color: #f0b8b0; color: #c0392b; }
+  .review-btn:hover { filter: brightness(0.97); }
+  .review-note {
+    font-size: 12.5px; color: #c0392b; background: #fdeceb; border: 1px solid #f2c6c0;
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 18px;
+  }
+  .pill {
+    width: 140px; padding: 7px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; text-align: center; transition: all 0.15s ease;
+    font-family: inherit; background: #fff;
+  }
+  .pill.empty { background: #fff; border: 1px solid #d8dbe2; color: #8a93a3; }
+  .pill.sent { background: #eaf1fb; border: 1px solid #cddcf3; color: #2f5faa; }
+  .pill.received { background: #e9f5ee; border: 1px solid #c8e6d5; color: #3a6b52; }
+  .pill.auditors { background: #f2ecfb; border: 1px solid #ddccf2; color: #6b4fa0; }
+  .pill:disabled { opacity: 0.45; cursor: not-allowed; }
+  .pill-group { display: flex; align-items: center; gap: 4px; width: 140px; }
+  .pill-group .pill { width: auto; flex: 1; }
+  .edit-btn {
+    width: 24px; height: 24px; flex-shrink: 0; border: 1px solid #d8dbe2; background: #fff;
+    color: #8a93a3; cursor: pointer; font-size: 11px; border-radius: 6px; padding: 0;
+  }
+  .edit-btn:hover { background: #f0f1f4; color: #4a5262; }
+  .pill-editwrap { width: 140px; }
+  .date-edit {
+    width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #7a95c9;
+    font-size: 12.5px; font-family: inherit; outline: none; box-sizing: border-box;
+  }
+  .remove-btn {
+    width: 24px; height: 24px; border: none; background: transparent; color: #c3c8d1;
+    cursor: pointer; font-size: 13px; border-radius: 6px;
+  }
+  .remove-btn:hover { background: #f0f1f4; color: #8a93a3; }
+  .add-row { display: flex; gap: 8px; margin-top: 16px; }
+  .add-input {
+    flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 13.5px; font-family: inherit; outline: none;
+  }
+  .add-btn {
+    padding: 9px 16px; border-radius: 8px; border: none; background: #1e2532; color: #fff;
+    font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .io-row { display: flex; gap: 8px; margin-top: 10px; }
+  .io-btn {
+    flex: 1; padding: 9px 14px; border-radius: 8px; border: 1px solid #d8dbe2; background: #fff;
+    color: #1e2532; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .io-btn:hover { background: #f6f7f9; }
+  .io-btn.small { flex: none; padding: 7px 12px; font-size: 12.5px; }
+  .logout-row { text-align: center; margin-top: 14px; }
+  .logout-link { font-size: 12px; color: #8a93a3; text-decoration: none; }
+  .logout-link:hover { text-decoration: underline; color: #4a5262; }
+  .email-panel {
+    margin-top: 14px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 16px;
+    background: #f9fafb;
+  }
+  .email-panel-title { font-size: 13.5px; font-weight: 700; color: #1e2532; margin-bottom: 12px; }
+  .email-field-label { font-size: 11px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+  .email-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .email-subject-input {
+    flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 13px; font-family: inherit; background: #fff; color: #1e2532;
+  }
+  .email-body-textarea {
+    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 12.5px; font-family: inherit; background: #fff; color: #1e2532;
+    resize: vertical; margin-bottom: 12px; box-sizing: border-box; white-space: pre-wrap;
+  }
+  .email-link { text-decoration: none; display: inline-flex; align-items: center; }
+  .email-hint { font-size: 11.5px; color: #8a93a3; line-height: 1.5; }
+  .error-note { font-size: 12px; color: #b3432f; margin-top: 10px; }
+</style>
+<div id="app"><div class="loading">Loading tracker…</div></div>
+<script>
+const STORAGE_KEY = "manager-approval-tracker:v1";
+const INITIAL_MANAGERS = [
+  "James Choi", "Jiaqi Chen", "Alice Hess", "Diane Robinson", "Katerina Suh",
+  "Ajit Patel", "Paula Serafin", "Dawn Flanders", "Wayne Rooks",
+];
+
+function today() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function toISO(dateStr) {
+  if (!dateStr) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const withYear = `${dateStr} ${new Date().getFullYear()}`;
+  const d = new Date(withYear);
+  if (isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatDisplay(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function normalizeManagers(raw) {
+  const out = {};
+  Object.keys(raw || {}).forEach((name) => {
+    const m = raw[name] || {};
+    out[name] = {
+      sent: !!m.sent,
+      sentDate: m.sent ? (toISO(m.sentDate) || today()) : null,
+      received: !!m.received,
+      receivedDate: m.received ? (toISO(m.receivedDate) || today()) : null,
+      auditors: !!m.auditors,
+      auditorsDate: m.auditors ? (toISO(m.auditorsDate) || today()) : null,
+      reviewRequired: !!m.reviewRequired,
+    };
+  });
+  return out;
+}
+
+function makeInitialState() {
+  const managers = {};
+  INITIAL_MANAGERS.forEach((name) => {
+    managers[name] = { sent: true, sentDate: today(), received: false, receivedDate: null, auditors: false, auditorsDate: null, reviewRequired: false };
+  });
+  return managers;
+}
+
+let managers = null;
+let editing = null; // { name, field }
+let emailPanelOpen = false;
+let copyFeedback = null; // 'subject' | 'body' | null
+
+async function load() {
+  try {
+    const result = await window.storage.get(STORAGE_KEY, false);
+    managers = result && result.value ? normalizeManagers(JSON.parse(result.value)) : makeInitialState();
+  } catch (e) {
+    managers = makeInitialState();
+  }
+  render();
+}
+
+async function persist() {
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(managers), false);
+    setError(null);
+  } catch (e) {
+    setError("Couldn't save — your last change may not persist.");
+  }
+}
+
+let errorMsg = null;
+function setError(msg) { errorMsg = msg; renderErrorOnly(); }
+
+function toggleSent(name) {
+  const m = managers[name];
+  if (m.sent) {
+    m.sent = false; m.sentDate = null;
+    m.received = false; m.receivedDate = null;
+  } else {
+    m.sent = true; m.sentDate = today();
+  }
+  persist();
+  render();
+}
+
+function toggleReceived(name) {
+  const m = managers[name];
+  if (!m.sent) return;
+  if (m.received) {
+    m.received = false; m.receivedDate = null;
+    m.auditors = false; m.auditorsDate = null;
+  } else {
+    m.received = true; m.receivedDate = today();
+  }
+  persist();
+  render();
+}
+
+function toggleAuditors(name) {
+  const m = managers[name];
+  if (!m.received) return;
+  if (m.auditors) { m.auditors = false; m.auditorsDate = null; }
+  else { m.auditors = true; m.auditorsDate = today(); }
+  persist();
+  render();
+}
+
+function toggleReview(name) {
+  managers[name].reviewRequired = !managers[name].reviewRequired;
+  persist();
+  render();
+}
+
+function buildEmailSummary() {
+  const names = Object.keys(managers);
+  const sentCount = names.filter((n) => managers[n].sent).length;
+  const receivedCount = names.filter((n) => managers[n].received).length;
+  const auditorsCount = names.filter((n) => managers[n].auditors).length;
+  const flagged = names.filter((n) => managers[n].reviewRequired);
+
+  const lines = [];
+  lines.push(`Manager Approval Tracker — Status Update (${formatDisplay(today())})`);
+  lines.push("");
+  lines.push(
+    `Summary: Sent ${sentCount}/${names.length} | Responded ${receivedCount}/${names.length} | Sent to Auditors ${auditorsCount}/${names.length}`
+  );
+  lines.push("");
+  lines.push("Manager Status:");
+  names.forEach((name) => {
+    const m = managers[name];
+    const parts = [];
+    parts.push(m.sent ? `List sent (${formatDisplay(m.sentDate)})` : "List not yet sent");
+    parts.push(m.received ? `Responded (${formatDisplay(m.receivedDate)})` : "Awaiting response");
+    parts.push(m.auditors ? `Sent to auditors (${formatDisplay(m.auditorsDate)})` : "Not yet sent to auditors");
+    const flag = m.reviewRequired ? "  [REVIEW REQUIRED]" : "";
+    lines.push(`- ${name}: ${parts.join(" | ")}${flag}`);
+  });
+  if (flagged.length > 0) {
+    lines.push("");
+    lines.push(`Flagged for review: ${flagged.join(", ")}`);
+  }
+  return { subject: "Manager Approval Tracker — Status Update", body: lines.join("\n") };
+}
+
+function emailSummary() {
+  emailPanelOpen = !emailPanelOpen;
+  copyFeedback = null;
+  render();
+}
+
+async function copyText(text, which) {
+  try {
+    await navigator.clipboard.writeText(text);
+    copyFeedback = which;
+  } catch (e) {
+    // Fallback: select the text in its field so the user can copy manually
+    const el = document.getElementById(which === "subject" ? "emailSubjectField" : "emailBodyField");
+    if (el) { el.select(); el.setSelectionRange(0, 999999); }
+    copyFeedback = null;
+    setError("Couldn't copy automatically — text is selected, press Ctrl/Cmd+C.");
+  }
+  render();
+  setTimeout(() => { if (copyFeedback === which) { copyFeedback = null; render(); } }, 2000);
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(managers, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `manager-approval-tracker-${today()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function handleImportFile(file) {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new Error("Invalid format");
+    }
+    const confirmed = window.confirm(
+      "Importing will replace all current data in this tracker with the contents of the file. Continue?"
+    );
+    if (!confirmed) return;
+    managers = normalizeManagers(parsed);
+    editing = null;
+    await persist();
+    render();
+  } catch (e) {
+    setError("Import failed — please choose a valid exported JSON file.");
+  }
+}
+
+function startEditDate(name, field) {
+  editing = { name, field };
+  render();
+  setTimeout(() => {
+    const el = document.querySelector(".date-edit");
+    if (el) {
+      el.focus();
+      if (el.showPicker) { try { el.showPicker(); } catch (e) {} }
+    }
+  }, 0);
+}
+
+function commitEditDate(name, field, iso) {
+  if (iso) {
+    managers[name][field] = iso;
+    persist();
+  }
+  editing = null;
+  render();
+}
+
+function cancelEditDate() {
+  if (editing) { editing = null; render(); }
+}
+
+function addManager() {
+  const input = document.getElementById("newNameInput");
+  const name = input.value.trim();
+  if (!name || managers[name]) return;
+  managers[name] = { sent: false, sentDate: null, received: false, receivedDate: null, auditors: false, auditorsDate: null, reviewRequired: false };
+  input.value = "";
+  persist();
+  render();
+}
+
+function removeManager(name) {
+  delete managers[name];
+  persist();
+  render();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderErrorOnly() {
+  const el = document.getElementById("errorNote");
+  if (el) el.textContent = errorMsg || "";
+}
+
+function render() {
+  const names = Object.keys(managers);
+  const sentCount = names.filter((n) => managers[n].sent).length;
+  const receivedCount = names.filter((n) => managers[n].received).length;
+  const auditorsCount = names.filter((n) => managers[n].auditors).length;
+  const pending = names.filter((n) => managers[n].sent && !managers[n].received);
+  const needsReview = names.filter((n) => managers[n].reviewRequired);
+  const pct = names.length ? (receivedCount / names.length) * 100 : 0;
+  const pctOf = (count) => names.length ? Math.round((count / names.length) * 100) : 0;
+
+  function dateCell(name, field, statusClass, isOn, dateVal, disabled, toggleAction, offLabel) {
+    const isEditing = editing && editing.name === name && editing.field === field;
+    if (isEditing) {
+      return `<div class="pill-editwrap"><input type="date" class="date-edit" data-name="${name}" data-field="${field}" value="${dateVal || ""}"></div>`;
+    }
+    if (isOn) {
+      return `
+        <div class="pill-group">
+          <button class="pill ${statusClass}" data-action="${toggleAction}" data-name="${name}">✓ ${formatDisplay(dateVal)}</button>
+          <button class="edit-btn" title="Change date" data-action="editDate" data-name="${name}" data-field="${field}">✎</button>
+        </div>`;
+    }
+    return `<button class="pill empty" ${disabled ? "disabled" : ""} data-action="${toggleAction}" data-name="${name}">${offLabel}</button>`;
+  }
+
+  function renderEmailPanel() {
+    const { subject, body } = buildEmailSummary();
+    const safeSubject = escapeHtml(subject);
+    const mailtoHref = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    return `
+      <div class="email-panel">
+        <div class="email-panel-title">Email-ready summary</div>
+        <div class="email-field-label">Subject</div>
+        <div class="email-row">
+          <input id="emailSubjectField" class="email-subject-input" readonly value="${safeSubject}">
+          <button class="io-btn small" data-action="copySubject">${copyFeedback === "subject" ? "Copied!" : "Copy"}</button>
+        </div>
+        <div class="email-field-label">Body</div>
+        <textarea id="emailBodyField" class="email-body-textarea" readonly rows="10">${escapeHtml(body)}</textarea>
+        <div class="email-row">
+          <button class="io-btn small" data-action="copyBody">${copyFeedback === "body" ? "Copied!" : "Copy body"}</button>
+          <a class="io-btn small email-link" href="${mailtoHref}" target="_top">Try opening email app</a>
+        </div>
+        <div class="email-hint">Copy the subject and body above and paste them into a new email — this is the most reliable way to send it, since email apps can't always be launched directly from here.</div>
+      </div>
+    `;
+  }
+
+  const rows = names.map((name) => {
+    const m = managers[name];
+    const safeName = escapeHtml(name);
+    return `
+      <div class="row ${m.reviewRequired ? "needs-review" : ""}">
+        <div class="name-cell">
+          <span>${safeName}</span>
+          <button class="review-btn ${m.reviewRequired ? "active" : ""}" data-action="toggleReview" data-name="${safeName}">
+            ${m.reviewRequired ? "⚑ Review required" : "Flag for review"}
+          </button>
+        </div>
+        ${dateCell(safeName, "sentDate", "sent", m.sent, m.sentDate, false, "toggleSent", "Mark sent")}
+        <div class="col-divider"></div>
+        ${dateCell(safeName, "receivedDate", "received", m.received, m.receivedDate, !m.sent, "toggleReceived", "Mark responded")}
+        <div class="col-divider"></div>
+        ${dateCell(safeName, "auditorsDate", "auditors", m.auditors, m.auditorsDate, !m.received, "toggleAuditors", "Mark sent to auditors")}
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("app").innerHTML = `
+    <div class="page-header">
+      <div class="header-row">
+        <div>
+          <h1 class="title">Manager Approval Tracker</h1>
+          <p class="subtitle">User list sign-offs</p>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-value">${sentCount}/${names.length}</div>
+            <div class="stat-label">Sent</div>
+            <div class="stat-pct">${pctOf(sentCount)}%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value accent">${receivedCount}/${names.length}</div>
+            <div class="stat-label">Responded</div>
+            <div class="stat-pct">${pctOf(receivedCount)}%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" style="color:#c9aef2">${auditorsCount}/${names.length}</div>
+            <div class="stat-label">To auditors</div>
+            <div class="stat-pct">${pctOf(auditorsCount)}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      ${pending.length > 0 ? `<div class="pending-note">Waiting on: ${pending.map(escapeHtml).join(", ")}</div>` : ""}
+      ${needsReview.length > 0 ? `<div class="review-note">⚑ Review required: ${needsReview.map(escapeHtml).join(", ")}</div>` : ""}
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="th" style="flex:1; text-align:left; border-left:none; padding-left:0;">Manager</div>
+          <div class="col-divider"></div>
+          <div class="th">List sent</div>
+          <div class="col-divider"></div>
+          <div class="th">Responded</div>
+          <div class="col-divider"></div>
+          <div class="th">Sent to auditors</div>
+        </div>
+        ${rows}
+      </div>
+      <div class="add-row">
+        <input id="newNameInput" class="add-input" placeholder="Add a manager…" />
+        <button class="add-btn" data-action="addManager">Add</button>
+      </div>
+      <div class="io-row">
+        <button class="io-btn" data-action="emailSummary">✉ Email</button>
+        <button class="io-btn" data-action="exportData">⬇ Export JSON</button>
+        <button class="io-btn" data-action="importData">⬆ Import JSON</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <div class="logout-row"><a href="/logout" class="logout-link">Log out</a></div>
+      ${emailPanelOpen ? renderEmailPanel() : ""}
+      <div id="errorNote" class="error-note">${errorMsg || ""}</div>
+    </div>
+  `;
+
+  const input = document.getElementById("newNameInput");
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") addManager(); });
+}
+
+document.getElementById("app").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const name = btn.dataset.name;
+  if (action === "toggleSent") toggleSent(name);
+  else if (action === "toggleReceived") toggleReceived(name);
+  else if (action === "toggleAuditors") toggleAuditors(name);
+  else if (action === "toggleReview") toggleReview(name);
+  else if (action === "removeManager") removeManager(name);
+  else if (action === "addManager") addManager();
+  else if (action === "editDate") startEditDate(name, btn.dataset.field);
+  else if (action === "exportData") exportData();
+  else if (action === "importData") document.getElementById("importFile").click();
+  else if (action === "emailSummary") emailSummary();
+  else if (action === "copySubject") copyText(document.getElementById("emailSubjectField").value, "subject");
+  else if (action === "copyBody") copyText(document.getElementById("emailBodyField").value, "body");
+});
+
+document.getElementById("app").addEventListener("change", (e) => {
+  const dateInput = e.target.closest(".date-edit");
+  if (dateInput) {
+    commitEditDate(dateInput.dataset.name, dateInput.dataset.field, dateInput.value);
+    return;
+  }
+  if (e.target.id === "importFile") {
+    const file = e.target.files[0];
+    handleImportFile(file);
+    e.target.value = "";
+  }
+});
+
+document.getElementById("app").addEventListener("blur", (e) => {
+  if (e.target.classList && e.target.classList.contains("date-edit")) {
+    setTimeout(cancelEditDate, 150);
+  }
+}, true);
+
+load();
+</script>
