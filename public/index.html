@@ -133,12 +133,6 @@
 </style>
 <div id="app"><div class="loading">Loading tracker…</div></div>
 <script>
-const STORAGE_KEY = "manager-approval-tracker:v1";
-const INITIAL_MANAGERS = [
-  "James Choi", "Jiaqi Chen", "Alice Hess", "Diane Robinson", "Katerina Suh",
-  "Ajit Patel", "Paula Serafin", "Dawn Flanders", "Wayne Rooks",
-];
-
 function today() {
   const d = new Date();
   const y = d.getFullYear();
@@ -166,6 +160,8 @@ function formatDisplay(iso) {
   return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+// Used only to clean up legacy/imported data before sending it to the
+// server — the server is the source of truth for shape and defaults.
 function normalizeManagers(raw) {
   const out = {};
   Object.keys(raw || {}).forEach((name) => {
@@ -183,79 +179,96 @@ function normalizeManagers(raw) {
   return out;
 }
 
-function makeInitialState() {
-  const managers = {};
-  INITIAL_MANAGERS.forEach((name) => {
-    managers[name] = { sent: true, sentDate: today(), received: false, receivedDate: null, auditors: false, auditorsDate: null, reviewRequired: false };
-  });
-  return managers;
-}
-
-let managers = null;
+let managers = {};
 let editing = null; // { name, field }
 let emailPanelOpen = false;
 let copyFeedback = null; // 'subject' | 'body' | null
+let errorMsg = null;
+
+// --- Data layer: everyone reads/writes the same shared D1 database via
+// these API routes (see /functions/api/managers/*.js). ---
 
 async function load() {
   try {
-    const result = await window.storage.get(STORAGE_KEY, false);
-    managers = result && result.value ? normalizeManagers(JSON.parse(result.value)) : makeInitialState();
-  } catch (e) {
-    managers = makeInitialState();
-  }
-  render();
-}
-
-async function persist() {
-  try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(managers), false);
+    const res = await fetch("/api/managers");
+    if (!res.ok) throw new Error("Failed to load");
+    managers = await res.json();
     setError(null);
   } catch (e) {
-    setError("Couldn't save — your last change may not persist.");
+    managers = managers || {};
+    setError("Couldn't load data from the server. Try refreshing the page.");
+  }
+  render();
+}
+
+async function refreshQuietly() {
+  // Used for background polling — skips if the user is mid-edit so we
+  // don't clobber something they're typing.
+  if (editing || emailPanelOpen) return;
+  try {
+    const res = await fetch("/api/managers");
+    if (res.ok) {
+      managers = await res.json();
+      render();
+    }
+  } catch (e) {
+    // Stay quiet — keep showing the last known good state.
   }
 }
 
-let errorMsg = null;
+async function sendPatch(name, patch) {
+  try {
+    const res = await fetch(`/api/managers/${encodeURIComponent(name)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error("Request failed");
+    setError(null);
+  } catch (e) {
+    setError("Couldn't save your last change — please try again.");
+  }
+}
+
 function setError(msg) { errorMsg = msg; renderErrorOnly(); }
 
-function toggleSent(name) {
+async function toggleSent(name) {
   const m = managers[name];
-  if (m.sent) {
-    m.sent = false; m.sentDate = null;
-    m.received = false; m.receivedDate = null;
-  } else {
-    m.sent = true; m.sentDate = today();
-  }
-  persist();
+  const patch = m.sent
+    ? { sent: false, sentDate: null, received: false, receivedDate: null }
+    : { sent: true, sentDate: today() };
+  Object.assign(m, patch);
   render();
+  await sendPatch(name, patch);
 }
 
-function toggleReceived(name) {
+async function toggleReceived(name) {
   const m = managers[name];
   if (!m.sent) return;
-  if (m.received) {
-    m.received = false; m.receivedDate = null;
-    m.auditors = false; m.auditorsDate = null;
-  } else {
-    m.received = true; m.receivedDate = today();
-  }
-  persist();
+  const patch = m.received
+    ? { received: false, receivedDate: null, auditors: false, auditorsDate: null }
+    : { received: true, receivedDate: today() };
+  Object.assign(m, patch);
   render();
+  await sendPatch(name, patch);
 }
 
-function toggleAuditors(name) {
+async function toggleAuditors(name) {
   const m = managers[name];
   if (!m.received) return;
-  if (m.auditors) { m.auditors = false; m.auditorsDate = null; }
-  else { m.auditors = true; m.auditorsDate = today(); }
-  persist();
+  const patch = m.auditors
+    ? { auditors: false, auditorsDate: null }
+    : { auditors: true, auditorsDate: today() };
+  Object.assign(m, patch);
   render();
+  await sendPatch(name, patch);
 }
 
-function toggleReview(name) {
-  managers[name].reviewRequired = !managers[name].reviewRequired;
-  persist();
+async function toggleReview(name) {
+  const patch = { reviewRequired: !managers[name].reviewRequired };
+  Object.assign(managers[name], patch);
   render();
+  await sendPatch(name, patch);
 }
 
 function buildEmailSummary() {
@@ -331,13 +344,18 @@ async function handleImportFile(file) {
       throw new Error("Invalid format");
     }
     const confirmed = window.confirm(
-      "Importing will replace all current data in this tracker with the contents of the file. Continue?"
+      "Importing will replace all current data for everyone using this tracker. Continue?"
     );
     if (!confirmed) return;
-    managers = normalizeManagers(parsed);
+    const normalized = normalizeManagers(parsed);
+    const res = await fetch("/api/managers/replace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(normalized),
+    });
+    if (!res.ok) throw new Error("Import failed on the server");
     editing = null;
-    await persist();
-    render();
+    await load();
   } catch (e) {
     setError("Import failed — please choose a valid exported JSON file.");
   }
@@ -355,32 +373,44 @@ function startEditDate(name, field) {
   }, 0);
 }
 
-function commitEditDate(name, field, iso) {
-  if (iso) {
-    managers[name][field] = iso;
-    persist();
-  }
+async function commitEditDate(name, field, iso) {
   editing = null;
+  if (!iso) { render(); return; }
+  managers[name][field] = iso;
   render();
+  await sendPatch(name, { [field]: iso });
 }
 
 function cancelEditDate() {
   if (editing) { editing = null; render(); }
 }
 
-function addManager() {
+async function addManager() {
   const input = document.getElementById("newNameInput");
   const name = input.value.trim();
   if (!name || managers[name]) return;
-  managers[name] = { sent: false, sentDate: null, received: false, receivedDate: null, auditors: false, auditorsDate: null, reviewRequired: false };
   input.value = "";
-  persist();
-  render();
-}
-
-function removeManager(name) {
-  delete managers[name];
-  persist();
+  try {
+    const res = await fetch("/api/managers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Couldn't add manager.");
+    }
+    const created = await res.json();
+    managers[name] = {
+      sent: created.sent, sentDate: created.sentDate,
+      received: created.received, receivedDate: created.receivedDate,
+      auditors: created.auditors, auditorsDate: created.auditorsDate,
+      reviewRequired: created.reviewRequired,
+    };
+    setError(null);
+  } catch (e) {
+    setError(e.message || "Couldn't add manager.");
+  }
   render();
 }
 
@@ -534,7 +564,6 @@ document.getElementById("app").addEventListener("click", (e) => {
   else if (action === "toggleReceived") toggleReceived(name);
   else if (action === "toggleAuditors") toggleAuditors(name);
   else if (action === "toggleReview") toggleReview(name);
-  else if (action === "removeManager") removeManager(name);
   else if (action === "addManager") addManager();
   else if (action === "editDate") startEditDate(name, btn.dataset.field);
   else if (action === "exportData") exportData();
@@ -564,4 +593,8 @@ document.getElementById("app").addEventListener("blur", (e) => {
 }, true);
 
 load();
+
+// Keep everyone's view roughly in sync without requiring manual refresh.
+setInterval(refreshQuietly, 20000);
+window.addEventListener("focus", refreshQuietly);
 </script>
