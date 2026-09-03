@@ -4,8 +4,7 @@
 // routing for everything (password gate, login/logout, the JSON API, and
 // falling through to static assets for the tool's HTML/CSS/JS).
 //
-// Secrets used (set via the Cloudflare dashboard: Settings → Variables and
-// Secrets — never committed):
+// Secrets used (set via the Cloudflare dashboard, never committed):
 //   SITE_PASSWORD   — the shared password for the tool
 //   SESSION_SECRET  — a random string used to sign session cookies
 //
@@ -230,7 +229,7 @@ async function isAuthenticated(request, env) {
 async function handleLoginPost(request, env) {
   if (!env.SITE_PASSWORD || !env.SESSION_SECRET) {
     return new Response(
-      "Server is missing SITE_PASSWORD / SESSION_SECRET secrets. Set them in the Cloudflare dashboard under Settings.",
+      "Server is missing SITE_PASSWORD / SESSION_SECRET secrets. Set them via the Cloudflare dashboard.",
       { status: 500 }
     );
   }
@@ -239,8 +238,17 @@ async function handleLoginPost(request, env) {
   const password = String(formData.get("password") || "").trim();
   const expectedPassword = String(env.SITE_PASSWORD || "").trim();
 
+  const debugInfo = {
+    submittedLength: password.length,
+    expectedLength: expectedPassword.length,
+    submittedCodes: Array.from(password).map((c) => c.charCodeAt(0)),
+    expectedCodes: Array.from(expectedPassword).map((c) => c.charCodeAt(0)),
+    sitePasswordBindingPresent: !!env.SITE_PASSWORD,
+    sessionSecretBindingPresent: !!env.SESSION_SECRET,
+  };
+
   if (!timingSafeEqual(password, expectedPassword)) {
-    return renderLoginPage(true);
+    return renderLoginPage(true, debugInfo);
   }
 
   const expiry = Date.now() + SESSION_DURATION_MS;
@@ -301,13 +309,16 @@ function timingSafeEqual(a, b) {
   return result === 0;
 }
 
-function renderLoginPage(showError) {
+function renderLoginPage(showError, debugInfo) {
+  const debugComment = debugInfo
+    ? `\n<!-- DEBUG (safe, no password text): ${JSON.stringify(debugInfo)} -->`
+    : "";
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in &#8212; Manager Approval Tracker</title>
+<title>Sign in &#8212; Manager Approval Tracker</title>${debugComment}
 <style>
   * { box-sizing: border-box; }
   html, body {
