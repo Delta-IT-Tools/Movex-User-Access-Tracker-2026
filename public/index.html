@@ -141,7 +141,15 @@
     border-radius: 8px; cursor: pointer; font-size: 16px; line-height: 1;
   }
   .diagram-close-btn:hover { background: #eceff3; color: #1e2532; }
-  .diagram-panel-caption { font-size: 13px; color: #6b7383; line-height: 1.5; margin-top: 12px; }
+  .diagram-visual {
+    background: linear-gradient(180deg, #9AC6E2 0%, #263138 100%);
+    border-radius: 10px; padding: 16px;
+  }
+  .diagram-panel-caption { font-size: 13px; color: #fff; line-height: 1.5; margin-top: 12px; }
+  .diagram-security { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e7e9ee; }
+  .diagram-security-title { font-size: 14px; font-weight: 700; color: #1e2532; margin: 0 0 8px; }
+  .diagram-security-text { font-size: 13px; color: #6b7383; line-height: 1.6; margin: 0 0 8px; }
+  .diagram-security-text:last-child { margin-bottom: 0; }
   .email-panel {
     margin-top: 16px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 18px;
     background: #f9fafb;
@@ -519,24 +527,25 @@ function render() {
             <h2>How this tool is hosted and served</h2>
             <button type="button" class="diagram-close-btn" data-action="closeDiagram" aria-label="Close">✕</button>
           </div>
+          <div class="diagram-visual">
           <svg width="100%" viewBox="0 0 680 286" role="img" aria-label="Hosting architecture diagram">
             <defs>
               <marker id="diagram-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M2 1L8 5L2 9" fill="none" stroke="#8a93a3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 1L8 5L2 9" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </marker>
             </defs>
             <g>
-              <rect x="40" y="40" width="170" height="56" rx="8" fill="#f6f7f9" stroke="#d8dbe2" stroke-width="1"/>
+              <rect x="40" y="40" width="170" height="56" rx="8" fill="#ffffff" stroke="#c5ccd6" stroke-width="1"/>
               <text x="125" y="58" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">GitHub repo</text>
               <text x="125" y="76" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Stores project code</text>
             </g>
             <g>
-              <rect x="270" y="40" width="210" height="56" rx="8" fill="#f6f7f9" stroke="#d8dbe2" stroke-width="1"/>
+              <rect x="270" y="40" width="210" height="56" rx="8" fill="#ffffff" stroke="#c5ccd6" stroke-width="1"/>
               <text x="375" y="58" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">Cloudflare Pages build</text>
               <text x="375" y="76" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Builds on every push</text>
             </g>
             <g>
-              <rect x="40" y="190" width="170" height="56" rx="8" fill="#f6f7f9" stroke="#d8dbe2" stroke-width="1"/>
+              <rect x="40" y="190" width="170" height="56" rx="8" fill="#ffffff" stroke="#c5ccd6" stroke-width="1"/>
               <text x="125" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">Browser</text>
               <text x="125" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Loads the tracker</text>
             </g>
@@ -550,12 +559,21 @@ function render() {
               <text x="567" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#6b4fa0">D1 database</text>
               <text x="567" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b4fa0">SQL data</text>
             </g>
-            <line x1="210" y1="68" x2="268" y2="68" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
-            <line x1="375" y1="96" x2="375" y2="188" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
-            <line x1="210" y1="218" x2="268" y2="218" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
-            <line x1="480" y1="218" x2="503" y2="218" stroke="#8a93a3" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="210" y1="68" x2="268" y2="68" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="375" y1="96" x2="375" y2="188" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="210" y1="218" x2="268" y2="218" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="480" y1="218" x2="503" y2="218" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
           </svg>
           <div class="diagram-panel-caption">A push to GitHub triggers a Cloudflare Pages build, which deploys to a Cloudflare Worker. The Worker serves this site and its API to your browser, and reads/writes manager data in a D1 database.</div>
+          <div class="diagram-panel-caption" style="margin-top: 8px;">The GitHub and Cloudflare accounts hosting this tool are owned and managed by Anthony Sole.</div>
+          </div>
+          <div class="diagram-security">
+            <div class="diagram-security-title">Additional Security Details</div>
+            <p class="diagram-security-text">Every request is checked by a Cloudflare Pages Function that runs in front of the site, before any page content is served. This check happens on the server, so it cannot be bypassed by viewing page source the way a password built into client-side JavaScript could be.</p>
+            <p class="diagram-security-text">The password itself is stored as a Cloudflare secret and never appears anywhere in the code or this repository. A correct password issues a signed session cookie (HMAC-SHA256, HttpOnly, Secure, SameSite=Lax) that keeps you signed in for 30 days without re-entering it.</p>
+            <p class="diagram-security-text">This is a single shared password for anyone who has it — there are no individual user accounts and no log of who signed in.</p>
+            <p class="diagram-security-text">The D1 database itself is not exposed to the internet directly — it's only reachable through the Worker's own code via a private binding, encrypted at rest by Cloudflare, and isolated to this Cloudflare account.</p>
+          </div>
         </div>
       </div>
     `;
