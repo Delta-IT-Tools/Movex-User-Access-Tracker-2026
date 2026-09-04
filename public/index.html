@@ -13,18 +13,16 @@
   }
   #app {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 28px 20px;
     color: #1e2532;
+    padding-bottom: 40px;
   }
   .loading { display: flex; justify-content: center; padding: 60px; color: #fff; }
   .page-header {
     background: #334249;
-    border-radius: 16px 16px 0 0;
-    padding: 24px 24px 20px;
+    padding: 28px 24px 24px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
   }
+  .page-header-inner { max-width: 840px; margin: 0 auto; }
   .header-row {
     display: flex;
     justify-content: space-between;
@@ -32,47 +30,47 @@
     flex-wrap: wrap;
     gap: 16px;
   }
-  .title { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; color: #fff; }
-  .subtitle { font-size: 13.5px; color: #a9b7c0; margin: 4px 0 0; }
-  .stat-row { display: flex; gap: 10px; }
-  .stat-box { background: rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 84px; }
-  .stat-value { font-size: 17px; font-weight: 700; line-height: 1.2; color: #fff; }
+  .title { font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -0.01em; color: #fff; }
+  .subtitle { font-size: 15px; color: #a9b7c0; margin: 4px 0 0; }
+  .stat-row { display: flex; gap: 12px; }
+  .stat-box { background: rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px 20px; text-align: center; min-width: 96px; }
+  .stat-value { font-size: 20px; font-weight: 700; line-height: 1.2; color: #fff; }
   .stat-value.accent { color: #86dab0; }
-  .stat-label { font-size: 12.5px; font-weight: 700; color: #b9c4cc; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 3px; }
-  .stat-pct { font-size: 15px; color: #d7dee2; margin-top: 3px; font-weight: 700; }
-  .page-body { background: #fff; border-radius: 0 0 16px 16px; padding: 20px 24px 24px; }
-  .progress-track { height: 6px; border-radius: 4px; background: #eceff3; overflow: hidden; margin-bottom: 8px; }
+  .stat-label { font-size: 14px; font-weight: 700; color: #b9c4cc; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 3px; }
+  .stat-pct { font-size: 17px; color: #d7dee2; margin-top: 3px; font-weight: 700; }
+  .page-body { background: #fff; border-radius: 0 0 16px 16px; padding: 24px 28px 28px; max-width: 840px; margin: 0 auto; }
+  .progress-track { height: 7px; border-radius: 4px; background: #eceff3; overflow: hidden; margin-bottom: 10px; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, #4f8f6d, #6cb08a); border-radius: 4px; transition: width 0.3s ease; }
   .pending-note {
-    font-size: 12.5px; color: #a5732a; background: #fdf5e8; border: 1px solid #f2e2c2;
-    border-radius: 8px; padding: 8px 12px; margin-bottom: 18px;
+    font-size: 13.5px; color: #a5732a; background: #fdf5e8; border: 1px solid #f2e2c2;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
   }
   .table-wrap { border: 1px solid #e7e9ee; border-radius: 12px; overflow: hidden; }
   .table-header {
-    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
     background: #f6f7f9; border-bottom: 1px solid #e7e9ee;
   }
-  .th { font-size: 11px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.04em; width: 140px; text-align: center; }
+  .th { font-size: 12.5px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.04em; width: 155px; text-align: center; }
   .th-small { width: 24px; }
-  .row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #f0f1f4; background: #fff; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f1f4; background: #fff; }
   .row:last-child { border-bottom: none; }
   .row.needs-review { background: #fff6f5; }
   .col-divider { width: 1px; align-self: stretch; background: #eceff3; flex-shrink: 0; }
-  .name-cell { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e2532; font-size: 14px; }
-  .name-cell span { width: 130px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .name-cell { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e2532; font-size: 15.5px; }
+  .name-cell span { width: 145px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .review-btn {
-    font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; cursor: pointer;
+    font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer;
     letter-spacing: 0.02em; text-transform: uppercase; border: 1px solid #d8dbe2; background: #fff;
-    color: #a4abb8; font-family: inherit; white-space: nowrap; width: 140px; flex-shrink: 0;
+    color: #a4abb8; font-family: inherit; white-space: nowrap; width: 155px; flex-shrink: 0;
   }
   .review-btn.active { background: #fdeceb; border-color: #f0b8b0; color: #c0392b; }
   .review-btn:hover { filter: brightness(0.97); }
   .review-note {
-    font-size: 12.5px; color: #c0392b; background: #fdeceb; border: 1px solid #f2c6c0;
-    border-radius: 8px; padding: 8px 12px; margin-bottom: 18px;
+    font-size: 13.5px; color: #c0392b; background: #fdeceb; border: 1px solid #f2c6c0;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
   }
   .pill {
-    width: 140px; padding: 7px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+    width: 155px; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 600;
     border: 1px solid transparent; cursor: pointer; text-align: center; transition: all 0.15s ease;
     font-family: inherit; background: #fff;
   }
@@ -81,46 +79,46 @@
   .pill.received { background: #e9f5ee; border: 1px solid #c8e6d5; color: #3a6b52; }
   .pill.auditors { background: #f2ecfb; border: 1px solid #ddccf2; color: #6b4fa0; }
   .pill:disabled { opacity: 0.45; cursor: not-allowed; }
-  .pill-group { display: flex; align-items: center; gap: 4px; width: 140px; }
+  .pill-group { display: flex; align-items: center; gap: 4px; width: 155px; }
   .pill-group .pill { width: auto; flex: 1; }
   .edit-btn {
-    width: 24px; height: 24px; flex-shrink: 0; border: 1px solid #d8dbe2; background: #fff;
-    color: #8a93a3; cursor: pointer; font-size: 11px; border-radius: 6px; padding: 0;
+    width: 26px; height: 26px; flex-shrink: 0; border: 1px solid #d8dbe2; background: #fff;
+    color: #8a93a3; cursor: pointer; font-size: 12px; border-radius: 6px; padding: 0;
   }
   .edit-btn:hover { background: #f0f1f4; color: #4a5262; }
-  .pill-editwrap { width: 140px; }
+  .pill-editwrap { width: 155px; }
   .date-edit {
-    width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #7a95c9;
-    font-size: 12.5px; font-family: inherit; outline: none; box-sizing: border-box;
+    width: 100%; padding: 7px 9px; border-radius: 8px; border: 1px solid #7a95c9;
+    font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;
   }
   .remove-btn {
     width: 24px; height: 24px; border: none; background: transparent; color: #c3c8d1;
     cursor: pointer; font-size: 13px; border-radius: 6px;
   }
   .remove-btn:hover { background: #f0f1f4; color: #8a93a3; }
-  .add-row { display: flex; gap: 8px; margin-top: 16px; }
+  .add-row { display: flex; gap: 8px; margin-top: 18px; }
   .add-input {
-    flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid #d8dbe2;
-    font-size: 13.5px; font-family: inherit; outline: none;
+    flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 15px; font-family: inherit; outline: none;
   }
   .add-btn {
-    padding: 9px 16px; border-radius: 8px; border: none; background: #1e2532; color: #fff;
-    font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+    padding: 10px 18px; border-radius: 8px; border: none; background: #1e2532; color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
-  .io-row { display: flex; gap: 8px; margin-top: 10px; }
+  .io-row { display: flex; gap: 10px; margin-top: 12px; }
   .io-btn {
-    flex: 1; padding: 9px 14px; border-radius: 8px; border: 1px solid #d8dbe2; background: #fff;
-    color: #1e2532; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid #d8dbe2; background: #fff;
+    color: #1e2532; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
   .io-btn:hover { background: #f6f7f9; }
-  .io-btn.small { flex: none; padding: 7px 12px; font-size: 12.5px; }
-  .logout-row { text-align: center; margin-top: 14px; }
-  .logout-link { font-size: 12px; color: #8a93a3; text-decoration: none; }
+  .io-btn.small { flex: none; padding: 8px 14px; font-size: 13.5px; }
+  .logout-row { text-align: center; margin-top: 16px; }
+  .logout-link { font-size: 13px; color: #8a93a3; text-decoration: none; }
   .logout-link:hover { text-decoration: underline; color: #4a5262; }
   .network-fab {
     position: fixed; bottom: 16px; right: 20px; z-index: 40;
     background: rgba(51, 66, 73, 0.9); color: #fff; border: 1px solid #fff;
-    border-radius: 20px; padding: 7px 14px; font-size: 12px;
+    border-radius: 20px; padding: 9px 16px; font-size: 13.5px;
     font-family: inherit; cursor: pointer;
   }
   .network-fab:hover { background: #334249; }
@@ -130,36 +128,36 @@
     z-index: 50; padding: 20px;
   }
   .diagram-modal {
-    background: #fff; border-radius: 14px; padding: 20px;
-    max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto;
+    background: #fff; border-radius: 14px; padding: 22px;
+    max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto;
   }
-  .diagram-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .diagram-modal-head h2 { font-size: 16px; font-weight: 700; margin: 0; color: #1e2532; }
+  .diagram-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .diagram-modal-head h2 { font-size: 18px; font-weight: 700; margin: 0; color: #1e2532; }
   .diagram-close-btn {
-    width: 28px; height: 28px; border: none; background: #f6f7f9; color: #6b7383;
-    border-radius: 8px; cursor: pointer; font-size: 15px; line-height: 1;
+    width: 30px; height: 30px; border: none; background: #f6f7f9; color: #6b7383;
+    border-radius: 8px; cursor: pointer; font-size: 16px; line-height: 1;
   }
   .diagram-close-btn:hover { background: #eceff3; color: #1e2532; }
-  .diagram-panel-caption { font-size: 12px; color: #6b7383; line-height: 1.5; margin-top: 12px; }
+  .diagram-panel-caption { font-size: 13px; color: #6b7383; line-height: 1.5; margin-top: 12px; }
   .email-panel {
-    margin-top: 14px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 16px;
+    margin-top: 16px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 18px;
     background: #f9fafb;
   }
-  .email-panel-title { font-size: 13.5px; font-weight: 700; color: #1e2532; margin-bottom: 12px; }
-  .email-field-label { font-size: 11px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
-  .email-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .email-panel-title { font-size: 15px; font-weight: 700; color: #1e2532; margin-bottom: 14px; }
+  .email-field-label { font-size: 12.5px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+  .email-row { display: flex; gap: 8px; margin-bottom: 14px; }
   .email-subject-input {
-    flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #d8dbe2;
-    font-size: 13px; font-family: inherit; background: #fff; color: #1e2532;
+    flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 14.5px; font-family: inherit; background: #fff; color: #1e2532;
   }
   .email-body-textarea {
-    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #d8dbe2;
-    font-size: 12.5px; font-family: inherit; background: #fff; color: #1e2532;
-    resize: vertical; margin-bottom: 12px; box-sizing: border-box; white-space: pre-wrap;
+    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 14px; font-family: inherit; background: #fff; color: #1e2532;
+    resize: vertical; margin-bottom: 14px; box-sizing: border-box; white-space: pre-wrap;
   }
   .email-link { text-decoration: none; display: inline-flex; align-items: center; }
-  .email-hint { font-size: 11.5px; color: #8a93a3; line-height: 1.5; }
-  .error-note { font-size: 12px; color: #b3432f; margin-top: 10px; }
+  .email-hint { font-size: 12.5px; color: #8a93a3; line-height: 1.5; }
+  .error-note { font-size: 13px; color: #b3432f; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -582,26 +580,28 @@ function render() {
 
   document.getElementById("app").innerHTML = `
     <div class="page-header">
-      <div class="header-row">
-        <div>
-          <h1 class="title">Manager Approval Tracker</h1>
-          <p class="subtitle">User list sign-offs</p>
-        </div>
-        <div class="stat-row">
-          <div class="stat-box">
-            <div class="stat-value">${sentCount}/${names.length}</div>
-            <div class="stat-label">Sent</div>
-            <div class="stat-pct">${pctOf(sentCount)}%</div>
+      <div class="page-header-inner">
+        <div class="header-row">
+          <div>
+            <h1 class="title">Manager Approval Tracker</h1>
+            <p class="subtitle">User list sign-offs</p>
           </div>
-          <div class="stat-box">
-            <div class="stat-value accent">${receivedCount}/${names.length}</div>
-            <div class="stat-label">Responded</div>
-            <div class="stat-pct">${pctOf(receivedCount)}%</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-value" style="color:#c9aef2">${auditorsCount}/${names.length}</div>
-            <div class="stat-label">To auditors</div>
-            <div class="stat-pct">${pctOf(auditorsCount)}%</div>
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-value">${sentCount}/${names.length}</div>
+              <div class="stat-label">Sent</div>
+              <div class="stat-pct">${pctOf(sentCount)}%</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value accent">${receivedCount}/${names.length}</div>
+              <div class="stat-label">Responded</div>
+              <div class="stat-pct">${pctOf(receivedCount)}%</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" style="color:#c9aef2">${auditorsCount}/${names.length}</div>
+              <div class="stat-label">To auditors</div>
+              <div class="stat-pct">${pctOf(auditorsCount)}%</div>
+            </div>
           </div>
         </div>
       </div>
