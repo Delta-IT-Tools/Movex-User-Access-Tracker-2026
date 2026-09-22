@@ -54,9 +54,10 @@
   }
   .th { font-size: 12.5px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.04em; width: 155px; text-align: center; }
   .th-small { width: 24px; }
-  .row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f1f4; background: #fff; }
-  .row:last-child { border-bottom: none; }
-  .row.needs-review { background: #fff6f5; }
+  .manager-block { background: #fff; border-bottom: 1px solid #f0f1f4; }
+  .manager-block:last-child { border-bottom: none; }
+  .manager-block.needs-review { background: #fff6f5; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 14px 16px 8px; background: transparent; }
   .col-divider { width: 1px; align-self: stretch; background: #eceff3; flex-shrink: 0; }
   .name-cell { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e2532; font-size: 15.5px; }
   .name-cell span { width: 145px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -99,6 +100,15 @@
     cursor: pointer; font-size: 13px; border-radius: 6px;
   }
   .remove-btn:hover { background: #f0f1f4; color: #8a93a3; }
+  .notes-row { padding: 0 16px 14px; }
+  .notes-label { font-size: 11.5px; font-weight: 700; color: #a4abb8; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .notes-textarea {
+    width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid #e7e9ee; font-size: 13.5px; font-family: inherit; color: #3a4150;
+    background: #fafbfc; resize: vertical; outline: none; min-height: 38px;
+  }
+  .notes-textarea:focus { border-color: #7a95c9; background: #fff; }
+  .notes-textarea::placeholder { color: #b3bac5; }
   .add-row { display: flex; gap: 8px; margin-top: 18px; }
   .add-input {
     flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #d8dbe2;
@@ -215,6 +225,7 @@ function normalizeManagers(raw) {
       auditors: !!m.auditors,
       auditorsDate: m.auditors ? (toISO(m.auditorsDate) || today()) : null,
       reviewRequired: !!m.reviewRequired,
+      notes: typeof m.notes === "string" ? m.notes : "",
     };
   });
   return out;
@@ -227,6 +238,8 @@ let copyFeedback = null; // 'subject' | 'body' | null
 let diagramOpen = false;
 let suppressRefresh = false; // true while a native file picker may be open
 let errorMsg = null;
+let notesFocused = null; // name of manager whose notes field currently has focus
+let notesDebounceTimers = {}; // name -> timeout id, for debounced notes saving
 
 // --- Data layer: everyone reads/writes the same shared D1 database via
 // these API routes (see /functions/api/managers/*.js). ---
@@ -246,10 +259,10 @@ async function load() {
 
 async function refreshQuietly() {
   // Used for background polling — skips if the user is mid-edit, has the
-  // email panel open, or might have a native file picker open (which would
-  // otherwise get its target element swapped out from under it by a
-  // re-render while it's open).
-  if (editing || emailPanelOpen || suppressRefresh) return;
+  // email panel open, is typing in a notes field, or might have a native
+  // file picker open (which would otherwise get its target element
+  // swapped out from under it by a re-render while it's open).
+  if (editing || emailPanelOpen || suppressRefresh || notesFocused) return;
   try {
     const res = await fetch("/api/managers");
     if (res.ok) {
@@ -316,6 +329,21 @@ async function toggleReview(name) {
   await sendPatch(name, patch);
 }
 
+function handleNotesInput(name, value) {
+  if (!managers[name]) return;
+  managers[name].notes = value;
+  clearTimeout(notesDebounceTimers[name]);
+  notesDebounceTimers[name] = setTimeout(() => {
+    sendPatch(name, { notes: managers[name].notes });
+  }, 800);
+}
+
+function flushNotes(name) {
+  if (!managers[name]) return;
+  clearTimeout(notesDebounceTimers[name]);
+  sendPatch(name, { notes: managers[name].notes });
+}
+
 function buildEmailSummary() {
   const names = Object.keys(managers);
   const sentCount = names.filter((n) => managers[n].sent).length;
@@ -339,6 +367,9 @@ function buildEmailSummary() {
     parts.push(m.auditors ? `Sent to auditors (${formatDisplay(m.auditorsDate)})` : "Not yet sent to auditors");
     const flag = m.reviewRequired ? "  [REVIEW REQUIRED]" : "";
     lines.push(`- ${name}: ${parts.join(" | ")}${flag}`);
+    if (m.notes && m.notes.trim()) {
+      lines.push(`    Notes: ${m.notes.trim()}`);
+    }
   });
   if (flagged.length > 0) {
     lines.push("");
@@ -452,6 +483,7 @@ async function addManager() {
       received: created.received, receivedDate: created.receivedDate,
       auditors: created.auditors, auditorsDate: created.auditorsDate,
       reviewRequired: created.reviewRequired,
+      notes: created.notes || "",
     };
     setError(null);
   } catch (e) {
@@ -582,19 +614,26 @@ function render() {
   const rows = names.map((name) => {
     const m = managers[name];
     const safeName = escapeHtml(name);
+    const isNotesFocused = notesFocused === safeName;
     return `
-      <div class="row ${m.reviewRequired ? "needs-review" : ""}">
-        <div class="name-cell">
-          <span>${safeName}</span>
-          <button class="review-btn ${m.reviewRequired ? "active" : ""}" data-action="toggleReview" data-name="${safeName}">
-            ${m.reviewRequired ? "⚑ Review required" : "Flag for review"}
-          </button>
+      <div class="manager-block ${m.reviewRequired ? "needs-review" : ""}">
+        <div class="row">
+          <div class="name-cell">
+            <span>${safeName}</span>
+            <button class="review-btn ${m.reviewRequired ? "active" : ""}" data-action="toggleReview" data-name="${safeName}">
+              ${m.reviewRequired ? "⚑ Review required" : "Flag for review"}
+            </button>
+          </div>
+          ${dateCell(safeName, "sentDate", "sent", m.sent, m.sentDate, false, "toggleSent", "Mark sent")}
+          <div class="col-divider"></div>
+          ${dateCell(safeName, "receivedDate", "received", m.received, m.receivedDate, !m.sent, "toggleReceived", "Mark responded")}
+          <div class="col-divider"></div>
+          ${dateCell(safeName, "auditorsDate", "auditors", m.auditors, m.auditorsDate, !m.received, "toggleAuditors", "Mark sent to auditors")}
         </div>
-        ${dateCell(safeName, "sentDate", "sent", m.sent, m.sentDate, false, "toggleSent", "Mark sent")}
-        <div class="col-divider"></div>
-        ${dateCell(safeName, "receivedDate", "received", m.received, m.receivedDate, !m.sent, "toggleReceived", "Mark responded")}
-        <div class="col-divider"></div>
-        ${dateCell(safeName, "auditorsDate", "auditors", m.auditors, m.auditorsDate, !m.received, "toggleAuditors", "Mark sent to auditors")}
+        <div class="notes-row">
+          <div class="notes-label">Notes</div>
+          <textarea class="notes-textarea" data-name="${safeName}" placeholder="Add notes for review…" rows="2">${isNotesFocused ? "" : escapeHtml(m.notes || "")}</textarea>
+        </div>
       </div>
     `;
   }).join("");
@@ -666,6 +705,20 @@ function render() {
 
   const input = document.getElementById("newNameInput");
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") addManager(); });
+
+  // Notes textareas are re-created on every render(). If a render happens
+  // while one is focused (shouldn't normally, since refreshQuietly skips
+  // while notesFocused is set), restore focus/value/cursor so typing isn't
+  // interrupted.
+  if (notesFocused) {
+    const ta = document.querySelector(`.notes-textarea[data-name="${notesFocused}"]`);
+    if (ta && managers[notesFocused]) {
+      ta.value = managers[notesFocused].notes || "";
+      ta.focus();
+      const len = ta.value.length;
+      ta.setSelectionRange(len, len);
+    }
+  }
 }
 
 document.getElementById("app").addEventListener("click", (e) => {
@@ -698,6 +751,18 @@ document.getElementById("app").addEventListener("click", (e) => {
   else if (action === "copyBody") copyText(document.getElementById("emailBodyField").value, "body");
 });
 
+document.getElementById("app").addEventListener("input", (e) => {
+  const ta = e.target.closest(".notes-textarea");
+  if (!ta) return;
+  handleNotesInput(ta.dataset.name, ta.value);
+});
+
+document.getElementById("app").addEventListener("focus", (e) => {
+  if (e.target.classList && e.target.classList.contains("notes-textarea")) {
+    notesFocused = e.target.dataset.name;
+  }
+}, true);
+
 document.getElementById("app").addEventListener("change", (e) => {
   const dateInput = e.target.closest(".date-edit");
   if (dateInput) {
@@ -714,6 +779,11 @@ document.getElementById("app").addEventListener("change", (e) => {
 document.getElementById("app").addEventListener("blur", (e) => {
   if (e.target.classList && e.target.classList.contains("date-edit")) {
     setTimeout(cancelEditDate, 150);
+  }
+  if (e.target.classList && e.target.classList.contains("notes-textarea")) {
+    const name = e.target.dataset.name;
+    flushNotes(name);
+    if (notesFocused === name) notesFocused = null;
   }
 }, true);
 

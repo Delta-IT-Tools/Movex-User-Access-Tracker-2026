@@ -24,7 +24,7 @@ export async function onRequestPost(context) {
     const m = body[name] || {};
     statements.push(
       env.DB.prepare(
-        "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       ).bind(
         name,
         m.sent ? 1 : 0,
@@ -33,7 +33,8 @@ export async function onRequestPost(context) {
         m.received ? m.receivedDate || null : null,
         m.auditors ? 1 : 0,
         m.auditors ? m.auditorsDate || null : null,
-        m.reviewRequired ? 1 : 0
+        m.reviewRequired ? 1 : 0,
+        typeof m.notes === "string" ? m.notes : ""
       )
     );
   }

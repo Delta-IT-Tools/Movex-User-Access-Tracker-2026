@@ -17,13 +17,14 @@ function rowToManager(row) {
     auditors: !!row.auditors,
     auditorsDate: row.auditors_date,
     reviewRequired: !!row.review_required,
+    notes: row.notes || "",
   };
 }
 
 export async function onRequestGet(context) {
   const { env } = context;
   const { results } = await env.DB.prepare(
-    "SELECT name, sent, sent_date, received, received_date, auditors, auditors_date, review_required FROM managers ORDER BY created_at ASC, rowid ASC"
+    "SELECT name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes FROM managers ORDER BY created_at ASC, rowid ASC"
   ).all();
 
   const managers = {};
@@ -44,7 +45,7 @@ export async function onRequestPost(context) {
 
   try {
     await env.DB.prepare(
-      "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required) VALUES (?, 0, NULL, 0, NULL, 0, NULL, 0)"
+      "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes) VALUES (?, 0, NULL, 0, NULL, 0, NULL, 0, '')"
     ).bind(name).run();
   } catch (e) {
     return json({ error: "A manager with that name already exists" }, 409);
@@ -59,5 +60,6 @@ export async function onRequestPost(context) {
     auditors: false,
     auditorsDate: null,
     reviewRequired: false,
+    notes: "",
   });
 }
