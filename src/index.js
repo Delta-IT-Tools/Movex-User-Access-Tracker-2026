@@ -102,12 +102,13 @@ function rowToManager(row) {
     auditors: !!row.auditors,
     auditorsDate: row.auditors_date,
     reviewRequired: !!row.review_required,
+    notes: row.notes || "",
   };
 }
 
 async function apiListManagers(env) {
   const { results } = await env.DB.prepare(
-    "SELECT name, sent, sent_date, received, received_date, auditors, auditors_date, review_required FROM managers ORDER BY created_at ASC, rowid ASC"
+    "SELECT name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes FROM managers ORDER BY created_at ASC, rowid ASC"
   ).all();
 
   const managers = {};
@@ -127,7 +128,7 @@ async function apiAddManager(request, env) {
 
   try {
     await env.DB.prepare(
-      "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required) VALUES (?, 0, NULL, 0, NULL, 0, NULL, 0)"
+      "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes) VALUES (?, 0, NULL, 0, NULL, 0, NULL, 0, '')"
     ).bind(name).run();
   } catch (e) {
     return json({ error: "A manager with that name already exists" }, 409);
@@ -142,6 +143,7 @@ async function apiAddManager(request, env) {
     auditors: false,
     auditorsDate: null,
     reviewRequired: false,
+    notes: "",
   });
 }
 
@@ -153,6 +155,7 @@ const FIELD_TO_COLUMN = {
   auditors: { col: "auditors", bool: true },
   auditorsDate: { col: "auditors_date", bool: false },
   reviewRequired: { col: "review_required", bool: true },
+  notes: { col: "notes", bool: false },
 };
 
 async function apiPatchManager(request, env, name) {
@@ -187,7 +190,7 @@ async function apiPatchManager(request, env, name) {
   }
 
   const row = await env.DB.prepare(
-    "SELECT name, sent, sent_date, received, received_date, auditors, auditors_date, review_required FROM managers WHERE name = ?"
+    "SELECT name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes FROM managers WHERE name = ?"
   ).bind(name).first();
 
   return json(rowToManager(row));
@@ -207,7 +210,7 @@ async function apiReplaceManagers(request, env) {
     const m = body[name] || {};
     statements.push(
       env.DB.prepare(
-        "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO managers (name, sent, sent_date, received, received_date, auditors, auditors_date, review_required, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       ).bind(
         name,
         m.sent ? 1 : 0,
@@ -216,7 +219,8 @@ async function apiReplaceManagers(request, env) {
         m.received ? m.receivedDate || null : null,
         m.auditors ? 1 : 0,
         m.auditors ? m.auditorsDate || null : null,
-        m.reviewRequired ? 1 : 0
+        m.reviewRequired ? 1 : 0,
+        typeof m.notes === "string" ? m.notes : ""
       )
     );
   }
