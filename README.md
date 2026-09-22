@@ -5,7 +5,7 @@ access lists — who's been sent their list, who's responded, and who's been
 reported to auditors — plus JSON export/import and an email-ready summary
 generator.
 
-Data is stored in a Cloudflare D1 database (SQLite), so everyone who has
+Data is stored  in a Cloudflare D1 database (SQLite), so everyone who has
 the password sees and edits the same live data, from any device.
 
 ## How it fits together
