@@ -548,7 +548,7 @@ function renderErrorOnly() {
 }
 
 function render() {
-  const names = Object.keys(managers);
+  const names = Object.keys(managers).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   const sentCount = names.filter((n) => managers[n].sent).length;
   const receivedCount = names.filter((n) => managers[n].received).length;
   const auditorsCount = names.filter((n) => managers[n].auditors).length;
