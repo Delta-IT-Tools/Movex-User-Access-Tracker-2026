@@ -180,6 +180,7 @@
   .email-hint { font-size: 12.5px; color: #8a93a3; line-height: 1.5; }
   .error-note { font-size: 13px; color: #b3432f; margin-top: 10px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="app"><div class="loading">Loading tracker…</div></div>
@@ -397,6 +398,49 @@ async function copyText(text, which) {
   }
   render();
   setTimeout(() => { if (copyFeedback === which) { copyFeedback = null; render(); } }, 2000);
+}
+
+function exportExcel() {
+  if (typeof XLSX === "undefined") {
+    setError("Excel export couldn't load — check your connection and refresh the page.");
+    return;
+  }
+  // Convert "2026-08-26" to a real Excel date serial (avoids timezone shifts)
+  const toSerial = (iso) => {
+    if (!iso) return "";
+    const [y, mo, d] = iso.split("-").map(Number);
+    return (Date.UTC(y, mo - 1, d) - Date.UTC(1899, 11, 30)) / 86400000;
+  };
+
+  const header = ["Manager", "List Sent", "Responded", "Sent to Auditors", "Notes", "Flag for Review"];
+  const rows = Object.keys(managers).map((name) => {
+    const m = managers[name];
+    return [
+      name,
+      m.sent ? toSerial(m.sentDate) : "",
+      m.received ? toSerial(m.receivedDate) : "",
+      m.auditors ? toSerial(m.auditorsDate) : "",
+      (m.notes || "").trim(),
+      m.reviewRequired ? "Yes" : "No",
+    ];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+
+  // Format columns B–D as dates
+  for (let r = 2; r <= rows.length + 1; r++) {
+    ["B", "C", "D"].forEach((col) => {
+      const cell = ws[`${col}${r}`];
+      if (cell && typeof cell.v === "number") cell.z = "mmm d, yyyy";
+    });
+  }
+
+  ws["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 17 }, { wch: 50 }, { wch: 15 }];
+  ws["!autofilter"] = { ref: ws["!ref"] };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Tracker");
+  XLSX.writeFile(wb, `manager-approval-tracker-${today()}.xlsx`);
 }
 
 function exportData() {
@@ -691,6 +735,7 @@ function render() {
       </div>
       <div class="io-row">
         <button class="io-btn" data-action="emailSummary">✉ Email</button>
+        <button class="io-btn" data-action="exportExcel">⬇ Export Excel</button>
         <button class="io-btn" data-action="exportData">⬇ Export JSON</button>
         <button class="io-btn" data-action="importData">⬆ Import JSON</button>
         <input type="file" id="importFile" accept="application/json" style="display:none">
@@ -739,6 +784,7 @@ document.getElementById("app").addEventListener("click", (e) => {
   else if (action === "addManager") addManager();
   else if (action === "editDate") startEditDate(name, btn.dataset.field);
   else if (action === "exportData") exportData();
+  else if (action === "exportExcel") exportExcel();
   else if (action === "importData") {
     suppressRefresh = true;
     setTimeout(() => { suppressRefresh = false; }, 120000); // safety net if the dialog is cancelled
