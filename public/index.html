@@ -1,214 +1,843 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Movex User Access Trackers</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Approval Tracker</title>
 <style>
-  :root {
-    --bg: #EEF1F4;
-    --surface: #FFFFFF;
-    --ink: #1B2733;
-    --muted: #5B6B7A;
-    --line: #C9D1D9;
-    --accent: #2F5D8A;
-    --accent-ink: #FFFFFF;
-    color-scheme: light;
-    box-sizing: border-box;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #141A21; --surface: #1C242D; --ink: #E6EBF0; --muted: #93A1AE;
-      --line: #2D3844; --accent: #7FA9D4; --accent-ink: #0F1720;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #141A21; --surface: #1C242D; --ink: #E6EBF0; --muted: #93A1AE;
-    --line: #2D3844; --accent: #7FA9D4; --accent-ink: #0F1720;
-    color-scheme: dark;
-  }
-  *, *::before, *::after { box-sizing: inherit; }
-  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
-    font-size: 1rem;
-    line-height: 1.5;
+    background: linear-gradient(180deg, #9AC6E2 0%, #263138 100%);
+    background-attachment: fixed;
   }
-  main {
-    max-width: 52rem;
-    margin: 0 auto;
-    padding: clamp(2rem, 7vw, 5rem) 1.25rem 4rem;
+  #app {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #1e2532;
+    padding-bottom: 40px;
   }
-  h1 {
-    font-size: clamp(1.6rem, 4vw, 2.2rem);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 0 0 0.4rem;
+  .loading { display: flex; justify-content: center; padding: 60px; color: #fff; }
+  .page-header {
+    background: #334249;
+    padding: 28px 24px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
   }
-  .lede { color: var(--muted); margin: 0 0 3rem; max-width: 36rem; }
-
-  section + section { margin-top: 2.75rem; }
-  h2 {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--muted);
-    margin: 0 0 0.9rem;
-  }
-  h2 span { color: var(--ink); font-weight: 600; margin-right: 0.4rem; }
-
-  /* Years: the big tabular numerals are the page's one bold move */
-  .years {
+  .page-header-inner { max-width: 840px; margin: 0 auto; }
+  .header-row {
     display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     flex-wrap: wrap;
-    gap: 0.5rem 2rem;
-    border-bottom: 2px solid var(--line);
+    gap: 16px;
   }
-  .year {
-    appearance: none;
-    background: none;
-    border: 0;
-    border-bottom: 4px solid transparent;
-    margin-bottom: -2px;
-    padding: 0 0 0.35rem;
-    font: inherit;
-    font-size: clamp(3.5rem, 13vw, 6.5rem);
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.04em;
-    font-variant-numeric: tabular-nums;
-    color: var(--line);
-    cursor: pointer;
-    transition: color .15s ease, border-color .15s ease;
+  .title { font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -0.01em; color: #fff; }
+  .subtitle { font-size: 18px; color: #a9b7c0; margin: 6px 0 0; }
+  .subtitle-audit { font-size: 16px; color: #86dab0; font-weight: 600; margin: 3px 0 0; letter-spacing: 0.02em; }
+  .stat-row { display: flex; gap: 12px; }
+  .stat-box { background: rgba(255, 255, 255, 0.20); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 12px 20px; text-align: center; min-width: 96px; }
+  .stat-value { font-size: 20px; font-weight: 700; line-height: 1.2; color: #fff; }
+  .stat-value.accent { color: #86dab0; }
+  .stat-label { font-size: 14px; font-weight: 700; color: #b9c4cc; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 3px; }
+  .stat-pct { font-size: 17px; color: #d7dee2; margin-top: 3px; font-weight: 700; }
+  .page-body { background: #fff; border-radius: 0 0 16px 16px; padding: 24px 28px 28px; max-width: 840px; margin: 0 auto; }
+  .progress-track { height: 7px; border-radius: 4px; background: #eceff3; overflow: hidden; margin-bottom: 10px; }
+  .section-header { font-size: 15px; font-weight: 700; color: #1e2532; margin: 0 0 10px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #4f8f6d, #6cb08a); border-radius: 4px; transition: width 0.3s ease; }
+  .pending-note {
+    font-size: 13.5px; color: #a5732a; background: #fdf5e8; border: 1px solid #f2e2c2;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
   }
-  .year:hover { color: var(--muted); }
-  .year[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
-  .year:focus-visible, .audit:focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 4px;
-    border-radius: 4px;
+  .table-wrap { border: 1px solid #e7e9ee; border-radius: 12px; overflow: hidden; }
+  .table-header {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    background: #f6f7f9; border-bottom: 1px solid #e7e9ee;
   }
-
-  .audits { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
-  .audit {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 1.1rem 1.25rem;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-left: 5px solid var(--accent);
-    border-radius: 6px;
-    color: var(--ink);
-    text-decoration: none;
+  .th { font-size: 12.5px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.04em; width: 155px; text-align: center; }
+  .th-small { width: 24px; }
+  .manager-block { background: #fff; border-bottom: 1px solid #f0f1f4; }
+  .manager-block:last-child { border-bottom: none; }
+  .manager-block.needs-review { background: #fff6f5; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 14px 16px 8px; background: transparent; }
+  .col-divider { width: 1px; align-self: stretch; background: #eceff3; flex-shrink: 0; }
+  .name-cell { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e2532; font-size: 15.5px; }
+  .name-cell span { width: 145px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .review-btn {
+    font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    letter-spacing: 0.02em; text-transform: uppercase; border: 1px solid #d8dbe2; background: #fff;
+    color: #a4abb8; font-family: inherit; white-space: nowrap; width: 155px; flex-shrink: 0;
   }
-  a.audit:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  a.audit:hover .detail { color: inherit; }
-  .audit .name { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
-  .audit .detail { font-size: 0.9rem; color: var(--muted); }
-  .audit.pending { border-left-color: var(--line); border-style: dashed; border-left-style: solid; cursor: default; }
-  .audit.pending .name { color: var(--muted); }
-
-  .placeholder { color: var(--muted); margin: 0; }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .review-btn.active { background: #fdeceb; border-color: #f0b8b0; color: #c0392b; }
+  .review-btn:hover { filter: brightness(0.97); }
+  .review-note {
+    font-size: 13.5px; color: #c0392b; background: #fdeceb; border: 1px solid #f2c6c0;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
+  }
+  .pill {
+    width: 155px; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; text-align: center; transition: all 0.15s ease;
+    font-family: inherit; background: #fff;
+  }
+  .pill.empty { background: #fff; border: 1px solid #d8dbe2; color: #8a93a3; }
+  .pill.sent { background: #eaf1fb; border: 1px solid #cddcf3; color: #2f5faa; }
+  .pill.received { background: #e9f5ee; border: 1px solid #c8e6d5; color: #3a6b52; }
+  .pill.auditors { background: #f2ecfb; border: 1px solid #ddccf2; color: #6b4fa0; }
+  .pill:disabled { opacity: 0.45; cursor: not-allowed; }
+  .pill-group { position: relative; width: 155px; }
+  .pill-group .pill { width: 100%; }
+  .edit-btn {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border: 1px solid #d8dbe2; background: #fff;
+    color: #8a93a3; cursor: pointer; font-size: 11px; border-radius: 6px; padding: 0;
+  }
+  .edit-btn:hover { background: #f0f1f4; color: #4a5262; }
+  .pill-editwrap { width: 155px; }
+  .date-edit {
+    width: 100%; padding: 7px 9px; border-radius: 8px; border: 1px solid #7a95c9;
+    font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;
+  }
+  .remove-btn {
+    width: 24px; height: 24px; border: none; background: transparent; color: #c3c8d1;
+    cursor: pointer; font-size: 13px; border-radius: 6px;
+  }
+  .remove-btn:hover { background: #f0f1f4; color: #8a93a3; }
+  .notes-row { padding: 0 16px 14px; }
+  .notes-label { font-size: 11.5px; font-weight: 700; color: #a4abb8; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .notes-textarea {
+    width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid #e7e9ee; font-size: 13.5px; font-family: inherit; color: #3a4150;
+    background: #fafbfc; resize: vertical; outline: none; min-height: 38px;
+  }
+  .notes-textarea:focus { border-color: #7a95c9; background: #fff; }
+  .notes-textarea::placeholder { color: #b3bac5; }
+  .add-row { display: flex; gap: 8px; margin-top: 18px; }
+  .add-input {
+    flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 15px; font-family: inherit; outline: none;
+  }
+  .add-btn {
+    padding: 10px 18px; border-radius: 8px; border: none; background: #1e2532; color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .io-row { display: flex; gap: 10px; margin-top: 12px; }
+  .io-btn {
+    flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid #d8dbe2; background: #fff;
+    color: #1e2532; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .io-btn:hover { background: #f6f7f9; }
+  .io-btn.small { flex: none; padding: 8px 14px; font-size: 13.5px; }
+  .logout-row { text-align: center; margin-top: 16px; }
+  .logout-link { font-size: 13px; color: #8a93a3; text-decoration: none; }
+  .logout-link:hover { text-decoration: underline; color: #4a5262; }
+  .network-fab {
+    position: fixed; bottom: 16px; right: 20px; z-index: 40;
+    background: rgba(51, 66, 73, 0.9); color: #fff; border: 1px solid #fff;
+    border-radius: 20px; padding: 9px 16px; font-size: 13.5px;
+    font-family: inherit; cursor: pointer;
+  }
+  .network-fab:hover { background: #334249; }
+  .diagram-backdrop {
+    position: fixed; inset: 0; background: rgba(20, 26, 29, 0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
+  }
+  .diagram-modal {
+    background: #fff; border-radius: 14px; padding: 22px;
+    max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto;
+  }
+  .diagram-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .diagram-modal-head h2 { font-size: 18px; font-weight: 700; margin: 0; color: #1e2532; }
+  .diagram-close-btn {
+    width: 30px; height: 30px; border: none; background: #f6f7f9; color: #6b7383;
+    border-radius: 8px; cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .diagram-close-btn:hover { background: #eceff3; color: #1e2532; }
+  .diagram-visual {
+    background: linear-gradient(180deg, #9AC6E2 0%, #263138 100%);
+    border-radius: 10px; padding: 16px;
+  }
+  .diagram-panel-caption { font-size: 13px; color: #fff; line-height: 1.5; margin-top: 12px; }
+  .diagram-security { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e7e9ee; }
+  .diagram-security-title { font-size: 14px; font-weight: 700; color: #1e2532; margin: 0 0 8px; }
+  .diagram-security-text { font-size: 13px; color: #6b7383; line-height: 1.6; margin: 0 0 8px; }
+  .diagram-security-text:last-child { margin-bottom: 0; }
+  .email-panel {
+    margin-top: 16px; border: 1px solid #e7e9ee; border-radius: 12px; padding: 18px;
+    background: #f9fafb;
+  }
+  .email-panel-title { font-size: 15px; font-weight: 700; color: #1e2532; margin-bottom: 14px; }
+  .email-field-label { font-size: 12.5px; font-weight: 700; color: #8a93a3; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+  .email-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .email-subject-input {
+    flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 14.5px; font-family: inherit; background: #fff; color: #1e2532;
+  }
+  .email-body-textarea {
+    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #d8dbe2;
+    font-size: 14px; font-family: inherit; background: #fff; color: #1e2532;
+    resize: vertical; margin-bottom: 14px; box-sizing: border-box; white-space: pre-wrap;
+  }
+  .email-link { text-decoration: none; display: inline-flex; align-items: center; }
+  .email-hint { font-size: 12.5px; color: #8a93a3; line-height: 1.5; }
+  .error-note { font-size: 13px; color: #b3432f; margin-top: 10px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-<main>
-  <h1>Movex user access trackers</h1>
-  <p class="lede">Pick the audit year, then the audit firm, to open its manager approval tracker.</p>
-
-  <section aria-labelledby="year-heading">
-    <h2 id="year-heading"><span>1</span>Year</h2>
-    <div class="years" id="years"></div>
-  </section>
-
-  <section aria-labelledby="audit-heading">
-    <h2 id="audit-heading"><span>2</span>Audit</h2>
-    <div id="audits"><p class="placeholder">Choose a year to see its audits.</p></div>
-  </section>
-</main>
-
+<div id="app"><div class="loading">Loading tracker…</div></div>
 <script>
-  /* ------------------------------------------------------------------
-     Add new trackers here. One entry per year; each audit gets a URL,
-     or url: null while that tracker isn’t deployed yet.
-     ------------------------------------------------------------------ */
-  const TRACKERS = [
-    {
-      year: 2026,
-      audits: [
-        { name: "PwC", url: "https://movex-users.delta-it-tools.workers.dev/" },
-        { name: "BDO", url: null }
-      ]
+function today() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function toISO(dateStr) {
+  if (!dateStr) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const withYear = `${dateStr} ${new Date().getFullYear()}`;
+  const d = new Date(withYear);
+  if (isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatDisplay(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Used only to clean up legacy/imported data before sending it to the
+// server — the server is the source of truth for shape and defaults.
+function normalizeManagers(raw) {
+  const out = {};
+  Object.keys(raw || {}).forEach((name) => {
+    const m = raw[name] || {};
+    out[name] = {
+      sent: !!m.sent,
+      sentDate: m.sent ? (toISO(m.sentDate) || today()) : null,
+      received: !!m.received,
+      receivedDate: m.received ? (toISO(m.receivedDate) || today()) : null,
+      auditors: !!m.auditors,
+      auditorsDate: m.auditors ? (toISO(m.auditorsDate) || today()) : null,
+      reviewRequired: !!m.reviewRequired,
+      notes: typeof m.notes === "string" ? m.notes : "",
+    };
+  });
+  return out;
+}
+
+let managers = {};
+let editing = null; // { name, field }
+let emailPanelOpen = false;
+let copyFeedback = null; // 'subject' | 'body' | null
+let diagramOpen = false;
+let suppressRefresh = false; // true while a native file picker may be open
+let errorMsg = null;
+let notesFocused = null; // name of manager whose notes field currently has focus
+let notesDebounceTimers = {}; // name -> timeout id, for debounced notes saving
+
+// --- Data layer: everyone reads/writes the same shared D1 database via
+// these API routes (see /functions/api/managers/*.js). ---
+
+async function load() {
+  try {
+    const res = await fetch("/api/managers");
+    if (!res.ok) throw new Error("Failed to load");
+    managers = await res.json();
+    setError(null);
+  } catch (e) {
+    managers = managers || {};
+    setError("Couldn't load data from the server. Try refreshing the page.");
+  }
+  render();
+}
+
+async function refreshQuietly() {
+  // Used for background polling — skips if the user is mid-edit, has the
+  // email panel open, is typing in a notes field, or might have a native
+  // file picker open (which would otherwise get its target element
+  // swapped out from under it by a re-render while it's open).
+  if (editing || emailPanelOpen || suppressRefresh || notesFocused) return;
+  try {
+    const res = await fetch("/api/managers");
+    if (res.ok) {
+      managers = await res.json();
+      render();
     }
-    // { year: 2027, audits: [ { name: "PwC", url: "https://..." }, { name: "BDO", url: "https://..." } ] },
-  ];
+  } catch (e) {
+    // Stay quiet — keep showing the last known good state.
+  }
+}
 
-  const yearsEl = document.getElementById("years");
-  const auditsEl = document.getElementById("audits");
-  const sorted = [...TRACKERS].sort((a, b) => b.year - a.year);
-
-  function renderAudits(entry) {
-    auditsEl.innerHTML = "";
-    const grid = document.createElement("div");
-    grid.className = "audits";
-    entry.audits.forEach(a => {
-      let card;
-      if (a.url) {
-        card = document.createElement("a");
-        card.href = a.url;
-        card.target = "_blank";
-        card.rel = "noopener";
-        card.className = "audit";
-        card.innerHTML = `<span class="name"></span><span class="detail">Open ${entry.year} tracker</span>`;
-      } else {
-        card = document.createElement("div");
-        card.className = "audit pending";
-        card.setAttribute("aria-disabled", "true");
-        card.innerHTML = `<span class="name"></span><span class="detail">Tracker not set up yet</span>`;
-      }
-      card.querySelector(".name").textContent = a.name;
-      grid.appendChild(card);
+async function sendPatch(name, patch) {
+  try {
+    const res = await fetch(`/api/managers/${encodeURIComponent(name)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
     });
-    auditsEl.appendChild(grid);
+    if (!res.ok) throw new Error("Request failed");
+    setError(null);
+  } catch (e) {
+    setError("Couldn't save your last change — please try again.");
   }
+}
 
-  function selectYear(year) {
-    const entry = sorted.find(t => t.year === year);
-    if (!entry) return;
-    yearsEl.querySelectorAll(".year").forEach(b =>
-      b.setAttribute("aria-pressed", String(Number(b.dataset.year) === year)));
-    renderAudits(entry);
-    if (location.hash !== "#y" + year) history.replaceState(null, "", "#y" + year);
+function setError(msg) { errorMsg = msg; renderErrorOnly(); }
+
+async function toggleSent(name) {
+  const m = managers[name];
+  const patch = m.sent
+    ? { sent: false, sentDate: null, received: false, receivedDate: null }
+    : { sent: true, sentDate: today() };
+  Object.assign(m, patch);
+  render();
+  await sendPatch(name, patch);
+}
+
+async function toggleReceived(name) {
+  const m = managers[name];
+  if (!m.sent) return;
+  const patch = m.received
+    ? { received: false, receivedDate: null, auditors: false, auditorsDate: null }
+    : { received: true, receivedDate: today() };
+  Object.assign(m, patch);
+  render();
+  await sendPatch(name, patch);
+}
+
+async function toggleAuditors(name) {
+  const m = managers[name];
+  if (!m.received) return;
+  const patch = m.auditors
+    ? { auditors: false, auditorsDate: null }
+    : { auditors: true, auditorsDate: today() };
+  Object.assign(m, patch);
+  render();
+  await sendPatch(name, patch);
+}
+
+async function toggleReview(name) {
+  const patch = { reviewRequired: !managers[name].reviewRequired };
+  Object.assign(managers[name], patch);
+  render();
+  await sendPatch(name, patch);
+}
+
+function handleNotesInput(name, value) {
+  if (!managers[name]) return;
+  managers[name].notes = value;
+  clearTimeout(notesDebounceTimers[name]);
+  notesDebounceTimers[name] = setTimeout(() => {
+    sendPatch(name, { notes: managers[name].notes });
+  }, 800);
+}
+
+function flushNotes(name) {
+  if (!managers[name]) return;
+  clearTimeout(notesDebounceTimers[name]);
+  sendPatch(name, { notes: managers[name].notes });
+}
+
+function buildEmailSummary() {
+  const names = Object.keys(managers);
+  const sentCount = names.filter((n) => managers[n].sent).length;
+  const receivedCount = names.filter((n) => managers[n].received).length;
+  const auditorsCount = names.filter((n) => managers[n].auditors).length;
+  const flagged = names.filter((n) => managers[n].reviewRequired);
+
+  const lines = [];
+  lines.push(`Manager Approval Tracker — Status Update (${formatDisplay(today())})`);
+  lines.push("");
+  lines.push(
+    `Summary: Sent ${sentCount}/${names.length} | Responded ${receivedCount}/${names.length} | Sent to Auditors ${auditorsCount}/${names.length}`
+  );
+  lines.push("");
+  lines.push("Manager Status:");
+  names.forEach((name) => {
+    const m = managers[name];
+    const parts = [];
+    parts.push(m.sent ? `List sent (${formatDisplay(m.sentDate)})` : "List not yet sent");
+    parts.push(m.received ? `Responded (${formatDisplay(m.receivedDate)})` : "Awaiting response");
+    parts.push(m.auditors ? `Sent to auditors (${formatDisplay(m.auditorsDate)})` : "Not yet sent to auditors");
+    const flag = m.reviewRequired ? "  [REVIEW REQUIRED]" : "";
+    lines.push(`- ${name}: ${parts.join(" | ")}${flag}`);
+    if (m.notes && m.notes.trim()) {
+      lines.push(`    Notes: ${m.notes.trim()}`);
+    }
+  });
+  if (flagged.length > 0) {
+    lines.push("");
+    lines.push(`Flagged for review: ${flagged.join(", ")}`);
   }
+  return { subject: "Manager Approval Tracker — Status Update", body: lines.join("\n") };
+}
 
-  sorted.forEach(t => {
-    const b = document.createElement("button");
-    b.className = "year";
-    b.type = "button";
-    b.dataset.year = t.year;
-    b.textContent = t.year;
-    b.setAttribute("aria-pressed", "false");
-    b.addEventListener("click", () => selectYear(t.year));
-    yearsEl.appendChild(b);
+function emailSummary() {
+  emailPanelOpen = !emailPanelOpen;
+  copyFeedback = null;
+  render();
+}
+
+async function copyText(text, which) {
+  try {
+    await navigator.clipboard.writeText(text);
+    copyFeedback = which;
+  } catch (e) {
+    // Fallback: select the text in its field so the user can copy manually
+    const el = document.getElementById(which === "subject" ? "emailSubjectField" : "emailBodyField");
+    if (el) { el.select(); el.setSelectionRange(0, 999999); }
+    copyFeedback = null;
+    setError("Couldn't copy automatically — text is selected, press Ctrl/Cmd+C.");
+  }
+  render();
+  setTimeout(() => { if (copyFeedback === which) { copyFeedback = null; render(); } }, 2000);
+}
+
+function exportExcel() {
+  if (typeof XLSX === "undefined") {
+    setError("Excel export couldn't load — check your connection and refresh the page.");
+    return;
+  }
+  // Convert "2026-08-26" to a real Excel date serial (avoids timezone shifts)
+  const toSerial = (iso) => {
+    if (!iso) return "";
+    const [y, mo, d] = iso.split("-").map(Number);
+    return (Date.UTC(y, mo - 1, d) - Date.UTC(1899, 11, 30)) / 86400000;
+  };
+
+  const header = ["Manager", "List Sent", "Responded", "Sent to Auditors", "Notes", "Flag for Review"];
+  const rows = Object.keys(managers).map((name) => {
+    const m = managers[name];
+    return [
+      name,
+      m.sent ? toSerial(m.sentDate) : "",
+      m.received ? toSerial(m.receivedDate) : "",
+      m.auditors ? toSerial(m.auditorsDate) : "",
+      (m.notes || "").trim(),
+      m.reviewRequired ? "Yes" : "No",
+    ];
   });
 
-  function fromHash() {
-    const m = location.hash.match(/^#y(\d{4})$/);
-    if (m) selectYear(Number(m[1]));
-    else if (sorted.length === 1) selectYear(sorted[0].year);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+
+  // Format columns B–D as dates
+  for (let r = 2; r <= rows.length + 1; r++) {
+    ["B", "C", "D"].forEach((col) => {
+      const cell = ws[`${col}${r}`];
+      if (cell && typeof cell.v === "number") cell.z = "mmm d, yyyy";
+    });
   }
-  window.addEventListener("hashchange", fromHash);
-  fromHash();
+
+  ws["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 17 }, { wch: 50 }, { wch: 15 }];
+  ws["!autofilter"] = { ref: ws["!ref"] };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Tracker");
+  XLSX.writeFile(wb, `manager-approval-tracker-${today()}.xlsx`);
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(managers, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `manager-approval-tracker-${today()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function handleImportFile(file) {
+  suppressRefresh = false; // the picker has closed one way or another
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new Error("Invalid format");
+    }
+    const confirmed = window.confirm(
+      "Importing will replace all current data for everyone using this tracker. Continue?"
+    );
+    if (!confirmed) return;
+    const normalized = normalizeManagers(parsed);
+    const res = await fetch("/api/managers/replace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(normalized),
+    });
+    if (!res.ok) throw new Error("Import failed on the server");
+    editing = null;
+    await load();
+  } catch (e) {
+    setError("Import failed — please choose a valid exported JSON file.");
+  }
+}
+
+function startEditDate(name, field) {
+  editing = { name, field };
+  render();
+  setTimeout(() => {
+    const el = document.querySelector(".date-edit");
+    if (el) {
+      el.focus();
+      if (el.showPicker) { try { el.showPicker(); } catch (e) {} }
+    }
+  }, 0);
+}
+
+async function commitEditDate(name, field, iso) {
+  editing = null;
+  if (!iso) { render(); return; }
+  managers[name][field] = iso;
+  render();
+  await sendPatch(name, { [field]: iso });
+}
+
+function cancelEditDate() {
+  if (editing) { editing = null; render(); }
+}
+
+async function addManager() {
+  const input = document.getElementById("newNameInput");
+  const name = input.value.trim();
+  if (!name || managers[name]) return;
+  input.value = "";
+  try {
+    const res = await fetch("/api/managers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Couldn't add manager.");
+    }
+    const created = await res.json();
+    managers[name] = {
+      sent: created.sent, sentDate: created.sentDate,
+      received: created.received, receivedDate: created.receivedDate,
+      auditors: created.auditors, auditorsDate: created.auditorsDate,
+      reviewRequired: created.reviewRequired,
+      notes: created.notes || "",
+    };
+    setError(null);
+  } catch (e) {
+    setError(e.message || "Couldn't add manager.");
+  }
+  render();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderErrorOnly() {
+  const el = document.getElementById("errorNote");
+  if (el) el.textContent = errorMsg || "";
+}
+
+function render() {
+  const names = Object.keys(managers).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  const sentCount = names.filter((n) => managers[n].sent).length;
+  const receivedCount = names.filter((n) => managers[n].received).length;
+  const auditorsCount = names.filter((n) => managers[n].auditors).length;
+  const pending = names.filter((n) => managers[n].sent && !managers[n].received);
+  const needsReview = names.filter((n) => managers[n].reviewRequired);
+  const pct = names.length ? (receivedCount / names.length) * 100 : 0;
+  const pctOf = (count) => names.length ? Math.round((count / names.length) * 100) : 0;
+
+  function dateCell(name, field, statusClass, isOn, dateVal, disabled, toggleAction, offLabel) {
+    const isEditing = editing && editing.name === name && editing.field === field;
+    if (isEditing) {
+      return `<div class="pill-editwrap"><input type="date" class="date-edit" data-name="${name}" data-field="${field}" value="${dateVal || ""}"></div>`;
+    }
+    if (isOn) {
+      return `
+        <div class="pill-group">
+          <button class="pill ${statusClass}" data-action="${toggleAction}" data-name="${name}">✓ ${formatDisplay(dateVal)}</button>
+          <button class="edit-btn" title="Change date" data-action="editDate" data-name="${name}" data-field="${field}">✎</button>
+        </div>`;
+    }
+    return `<button class="pill empty" ${disabled ? "disabled" : ""} data-action="${toggleAction}" data-name="${name}">${offLabel}</button>`;
+  }
+
+  function renderEmailPanel() {
+    const { subject, body } = buildEmailSummary();
+    const safeSubject = escapeHtml(subject);
+    const mailtoHref = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    return `
+      <div class="email-panel">
+        <div class="email-panel-title">Email-ready summary</div>
+        <div class="email-field-label">Subject</div>
+        <div class="email-row">
+          <input id="emailSubjectField" class="email-subject-input" readonly value="${safeSubject}">
+          <button class="io-btn small" data-action="copySubject">${copyFeedback === "subject" ? "Copied!" : "Copy"}</button>
+        </div>
+        <div class="email-field-label">Body</div>
+        <textarea id="emailBodyField" class="email-body-textarea" readonly rows="10">${escapeHtml(body)}</textarea>
+        <div class="email-row">
+          <button class="io-btn small" data-action="copyBody">${copyFeedback === "body" ? "Copied!" : "Copy body"}</button>
+          <a class="io-btn small email-link" href="${mailtoHref}" target="_top">Try opening email app</a>
+        </div>
+        <div class="email-hint">Copy the subject and body above and paste them into a new email — this is the most reliable way to send it, since email apps can't always be launched directly from here.</div>
+      </div>
+    `;
+  }
+
+  function renderDiagramModal() {
+    return `
+      <div class="diagram-backdrop">
+        <div class="diagram-modal">
+          <div class="diagram-modal-head">
+            <h2>How this tool is hosted and served</h2>
+            <button type="button" class="diagram-close-btn" data-action="closeDiagram" aria-label="Close">✕</button>
+          </div>
+          <div class="diagram-visual">
+          <svg width="100%" viewBox="0 0 680 286" role="img" aria-label="Hosting architecture diagram">
+            <defs>
+              <marker id="diagram-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M2 1L8 5L2 9" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </marker>
+            </defs>
+            <g>
+              <rect x="40" y="40" width="170" height="56" rx="8" fill="#ffffff" stroke="#c5ccd6" stroke-width="1"/>
+              <text x="125" y="58" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">GitHub repo</text>
+              <text x="125" y="76" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Stores project code</text>
+            </g>
+            <g>
+              <rect x="270" y="40" width="210" height="56" rx="8" fill="#ffffff" stroke="#c5ccd6" stroke-width="1"/>
+              <text x="375" y="58" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">Cloudflare Pages build</text>
+              <text x="375" y="76" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Builds on every push</text>
+            </g>
+            <g>
+              <rect x="40" y="190" width="170" height="56" rx="8" fill="#ffffff" stroke="#c5ccd6" stroke-width="1"/>
+              <text x="125" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#1e2532">Browser</text>
+              <text x="125" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b7383">Loads the tracker</text>
+            </g>
+            <g>
+              <rect x="270" y="190" width="210" height="56" rx="8" fill="#e9f5ee" stroke="#c8e6d5" stroke-width="1"/>
+              <text x="375" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#3a6b52">Cloudflare Worker</text>
+              <text x="375" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#3a6b52">Serves site and API</text>
+            </g>
+            <g>
+              <rect x="505" y="190" width="125" height="56" rx="8" fill="#f2ecfb" stroke="#ddccf2" stroke-width="1"/>
+              <text x="567" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#6b4fa0">D1 database</text>
+              <text x="567" y="226" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#6b4fa0">SQL data</text>
+            </g>
+            <line x1="210" y1="68" x2="268" y2="68" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="375" y1="96" x2="375" y2="188" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="210" y1="218" x2="268" y2="218" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+            <line x1="480" y1="218" x2="503" y2="218" stroke="#ffffff" stroke-width="1.5" marker-end="url(#diagram-arrow)"/>
+          </svg>
+          <div class="diagram-panel-caption">A push to GitHub triggers a Cloudflare Pages build, which deploys to a Cloudflare Worker. The Worker serves this site and its API to your browser, and reads/writes manager data in a D1 database.</div>
+          <div class="diagram-panel-caption" style="margin-top: 8px;">The GitHub and Cloudflare accounts hosting this tool are owned and managed by Anthony Sole.</div>
+          </div>
+          <div class="diagram-security">
+            <div class="diagram-security-title">Additional Security Details</div>
+            <p class="diagram-security-text">Every request is checked by a Cloudflare Pages Function that runs in front of the site, before any page content is served. This check happens on the server, so it cannot be bypassed by viewing page source the way a password built into client-side JavaScript could be.</p>
+            <p class="diagram-security-text">The password itself is stored as a Cloudflare secret and never appears anywhere in the code or this repository. A correct password issues a signed session cookie (HMAC-SHA256, HttpOnly, Secure, SameSite=Lax) that keeps you signed in for 30 days without re-entering it.</p>
+            <p class="diagram-security-text">This is a single shared password for anyone who has it — there are no individual user accounts and no log of who signed in.</p>
+            <p class="diagram-security-text">The D1 database itself is not exposed to the internet directly — it's only reachable through the Worker's own code via a private binding, encrypted at rest by Cloudflare, and isolated to this Cloudflare account.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const rows = names.map((name) => {
+    const m = managers[name];
+    const safeName = escapeHtml(name);
+    const isNotesFocused = notesFocused === safeName;
+    return `
+      <div class="manager-block ${m.reviewRequired ? "needs-review" : ""}">
+        <div class="row">
+          <div class="name-cell">
+            <span>${safeName}</span>
+            <button class="review-btn ${m.reviewRequired ? "active" : ""}" data-action="toggleReview" data-name="${safeName}">
+              ${m.reviewRequired ? "⚑ Review required" : "Flag for review"}
+            </button>
+          </div>
+          ${dateCell(safeName, "sentDate", "sent", m.sent, m.sentDate, false, "toggleSent", "Mark sent")}
+          <div class="col-divider"></div>
+          ${dateCell(safeName, "receivedDate", "received", m.received, m.receivedDate, !m.sent, "toggleReceived", "Mark responded")}
+          <div class="col-divider"></div>
+          ${dateCell(safeName, "auditorsDate", "auditors", m.auditors, m.auditorsDate, !m.received, "toggleAuditors", "Mark sent to auditors")}
+        </div>
+        <div class="notes-row">
+          <div class="notes-label">Notes</div>
+          <textarea class="notes-textarea" data-name="${safeName}" placeholder="Add notes for review…" rows="2">${isNotesFocused ? "" : escapeHtml(m.notes || "")}</textarea>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("app").innerHTML = `
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="header-row">
+          <div>
+            <h1 class="title">Manager Approval Tracker</h1>
+            <p class="subtitle">User list sign-offs</p>
+            <p class="subtitle-audit">Movex Audit 2026</p>
+          </div>
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-value">${sentCount}/${names.length}</div>
+              <div class="stat-label">Sent</div>
+              <div class="stat-pct">${pctOf(sentCount)}%</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value accent">${receivedCount}/${names.length}</div>
+              <div class="stat-label">Responded</div>
+              <div class="stat-pct">${pctOf(receivedCount)}%</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" style="color:#c9aef2">${auditorsCount}/${names.length}</div>
+              <div class="stat-label">To auditors</div>
+              <div class="stat-pct">${pctOf(auditorsCount)}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="section-header">Progress and Status</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      ${pending.length > 0 ? `<div class="pending-note">Waiting on: ${pending.map(escapeHtml).join(", ")}</div>` : ""}
+      ${needsReview.length > 0 ? `<div class="review-note">⚑ Review required: ${needsReview.map(escapeHtml).join(", ")}</div>` : ""}
+      <div class="section-header" style="margin-top: 20px;">Detailed Approval Tracker</div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="th" style="flex:1; text-align:left; border-left:none; padding-left:0;">Manager</div>
+          <div class="col-divider"></div>
+          <div class="th">List sent</div>
+          <div class="col-divider"></div>
+          <div class="th">Responded</div>
+          <div class="col-divider"></div>
+          <div class="th">Sent to auditors</div>
+        </div>
+        ${rows}
+      </div>
+      <div class="add-row">
+        <input id="newNameInput" class="add-input" placeholder="Add a manager…" />
+        <button class="add-btn" data-action="addManager">Add</button>
+      </div>
+      <div class="io-row">
+        <button class="io-btn" data-action="emailSummary">✉ Email</button>
+        <button class="io-btn" data-action="exportExcel">⬇ Export Excel</button>
+        <button class="io-btn" data-action="exportData">⬇ Export JSON</button>
+        <button class="io-btn" data-action="importData">⬆ Import JSON</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <div class="logout-row"><a href="/logout" class="logout-link">Log out</a></div>
+      ${emailPanelOpen ? renderEmailPanel() : ""}
+      <div id="errorNote" class="error-note">${errorMsg || ""}</div>
+    </div>
+    <button type="button" class="network-fab" data-action="toggleDiagram">Network diagram</button>
+    ${diagramOpen ? renderDiagramModal() : ""}
+  `;
+
+  const input = document.getElementById("newNameInput");
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") addManager(); });
+
+  // Notes textareas are re-created on every render(). If a render happens
+  // while one is focused (shouldn't normally, since refreshQuietly skips
+  // while notesFocused is set), restore focus/value/cursor so typing isn't
+  // interrupted.
+  if (notesFocused) {
+    const ta = document.querySelector(`.notes-textarea[data-name="${notesFocused}"]`);
+    if (ta && managers[notesFocused]) {
+      ta.value = managers[notesFocused].notes || "";
+      ta.focus();
+      const len = ta.value.length;
+      ta.setSelectionRange(len, len);
+    }
+  }
+}
+
+document.getElementById("app").addEventListener("click", (e) => {
+  if (e.target.classList && e.target.classList.contains("diagram-backdrop")) {
+    diagramOpen = false;
+    render();
+    return;
+  }
+  const btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  if (btn.tagName === "A") e.preventDefault();
+  const action = btn.dataset.action;
+  const name = btn.dataset.name;
+  if (action === "toggleSent") toggleSent(name);
+  else if (action === "toggleReceived") toggleReceived(name);
+  else if (action === "toggleAuditors") toggleAuditors(name);
+  else if (action === "toggleReview") toggleReview(name);
+  else if (action === "addManager") addManager();
+  else if (action === "editDate") startEditDate(name, btn.dataset.field);
+  else if (action === "exportData") exportData();
+  else if (action === "exportExcel") exportExcel();
+  else if (action === "importData") {
+    suppressRefresh = true;
+    setTimeout(() => { suppressRefresh = false; }, 120000); // safety net if the dialog is cancelled
+    document.getElementById("importFile").click();
+  }
+  else if (action === "emailSummary") emailSummary();
+  else if (action === "toggleDiagram") { diagramOpen = !diagramOpen; render(); }
+  else if (action === "closeDiagram") { diagramOpen = false; render(); }
+  else if (action === "copySubject") copyText(document.getElementById("emailSubjectField").value, "subject");
+  else if (action === "copyBody") copyText(document.getElementById("emailBodyField").value, "body");
+});
+
+document.getElementById("app").addEventListener("input", (e) => {
+  const ta = e.target.closest(".notes-textarea");
+  if (!ta) return;
+  handleNotesInput(ta.dataset.name, ta.value);
+});
+
+document.getElementById("app").addEventListener("focus", (e) => {
+  if (e.target.classList && e.target.classList.contains("notes-textarea")) {
+    notesFocused = e.target.dataset.name;
+  }
+}, true);
+
+document.getElementById("app").addEventListener("change", (e) => {
+  const dateInput = e.target.closest(".date-edit");
+  if (dateInput) {
+    commitEditDate(dateInput.dataset.name, dateInput.dataset.field, dateInput.value);
+    return;
+  }
+  if (e.target.id === "importFile") {
+    const file = e.target.files[0];
+    handleImportFile(file);
+    e.target.value = "";
+  }
+});
+
+document.getElementById("app").addEventListener("blur", (e) => {
+  if (e.target.classList && e.target.classList.contains("date-edit")) {
+    setTimeout(cancelEditDate, 150);
+  }
+  if (e.target.classList && e.target.classList.contains("notes-textarea")) {
+    const name = e.target.dataset.name;
+    flushNotes(name);
+    if (notesFocused === name) notesFocused = null;
+  }
+}, true);
+
+load();
+
+// Keep everyone's view roughly in sync without requiring manual refresh.
+setInterval(refreshQuietly, 20000);
+window.addEventListener("focus", refreshQuietly);
 </script>
 </body>
 </html>

@@ -1,8 +1,7 @@
 {
-  "name": "movex-access-trackers",
-  "version": "1.0.0",
+  "name": "movex-users",
   "private": true,
-  "description": "Landing page linking to each year's Movex User Access Tracker by audit firm",
+  "version": "1.0.0",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
